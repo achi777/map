@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgis/postgis:15-3.3
+    restart: always
+    container_name: postgis
+    environment:
+      POSTGRES_DB: gisdb
+      POSTGRES_USER: gisuser
+      POSTGRES_PASSWORD: gispassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+
+  geoserver:
+    image: kartoza/geoserver:2.22.0
+    restart: always
+    container_name: geoserver
+    environment:
+      - GEOSERVER_ADMIN_PASSWORD=admin
+      - GEOSERVER_ADMIN_USER=admin
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data/geoserver:/opt/geoserver_data
+    depends_on:
+      - db

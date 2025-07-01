@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title th:text="${title}">Interactive GIS Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        .info-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="info-panel">
+        <h4>GIS Map Controls</h4>
+        <p>Click on the map to get feature information</p>
+    </div>
+    <div id="map"></div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([41.7151, 44.8271], 8);
+        
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        fetch('/api/geo/config')
+            .then(response => response.json())
+            .then(config => {
+                const wmsLayer = L.tileLayer.wms(config.geoserverUrl + '/' + config.workspace + '/wms', {
+                    layers: 'your_layer',
+                    format: 'image/png',
+                    transparent: true,
+                    attribution: 'GeoServer WMS'
+                }).addTo(map);
+
+                map.on('click', function(e) {
+                    const url = config.geoserverUrl + '/' + config.workspace + '/wms?' +
+                        'SERVICE=WMS&VERSION=1.1.1&REQUEST=GetFeatureInfo&' +
+                        'LAYERS=your_layer&QUERY_LAYERS=your_layer&' +
+                        'BBOX=' + map.getBounds().toBBoxString() + '&' +
+                        'FEATURE_COUNT=1&HEIGHT=' + map.getSize().y + '&WIDTH=' + map.getSize().x + '&' +
+                        'INFO_FORMAT=application/json&SRS=EPSG:4326&' +
+                        'X=' + map.layerPointToContainerPoint(e.layerPoint).x + '&' +
+                        'Y=' + map.layerPointToContainerPoint(e.layerPoint).y;
+
+                    fetch(url)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.features && data.features.length) {
+                                const props = data.features[0].properties;
+                                let html = '<h4>Feature Information</h4>';
+                                for (let key in props) {
+                                    html += '<b>' + key + '</b>: ' + props[key] + '<br>';
+                                }
+                                L.popup()
+                                    .setLatLng(e.latlng)
+                                    .setContent(html)
+                                    .openOn(map);
+                            }
+                        })
+                        .catch(err => console.log('Error fetching feature info:', err));
+                });
+            })
+            .catch(err => console.log('Error loading config:', err));
+    </script>
+</body>
+</html>

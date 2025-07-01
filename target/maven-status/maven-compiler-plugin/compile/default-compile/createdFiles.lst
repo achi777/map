@@ -1,0 +1,6 @@
+ge/devspace/gismap/controller/GeoController.class
+ge/devspace/gismap/config/DatabaseConfig.class
+ge/devspace/gismap/controller/MapController.class
+ge/devspace/gismap/config/GeoServerConfig.class
+ge/devspace/gismap/GisMapApplication.class
+ge/devspace/gismap/service/GeoServerService.class
