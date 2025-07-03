@@ -1,6 +1,14 @@
-ge/devspace/gismap/controller/GeoController.class
+ge/devspace/gismap/repository/RoadRepository.class
 ge/devspace/gismap/config/DatabaseConfig.class
+ge/devspace/gismap/entity/Forest.class
+ge/devspace/gismap/config/DataInitializer.class
+ge/devspace/gismap/service/DataInitializationService.class
+ge/devspace/gismap/service/GeoServerService.class
+ge/devspace/gismap/repository/ForestRepository.class
+ge/devspace/gismap/controller/GeoController.class
+ge/devspace/gismap/repository/FactoryRepository.class
+ge/devspace/gismap/entity/Factory.class
 ge/devspace/gismap/controller/MapController.class
+ge/devspace/gismap/entity/Road.class
 ge/devspace/gismap/config/GeoServerConfig.class
 ge/devspace/gismap/GisMapApplication.class
-ge/devspace/gismap/service/GeoServerService.class

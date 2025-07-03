@@ -26,62 +26,214 @@
             z-index: 1000;
             max-width: 300px;
         }
+        .layer-controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 200px;
+        }
+        .layer-control {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+        .layer-control input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        .layer-control label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .layer-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            margin-right: 8px;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
 <body>
+    <div class="layer-controls">
+        <h4>Map Layers</h4>
+        <div id="layer-toggles">
+            <!-- Layer controls will be populated here -->
+        </div>
+    </div>
     <div class="info-panel">
-        <h4>GIS Map Controls</h4>
+        <h4>Georgia GIS Map</h4>
+        <p><strong>Republic of Georgia</strong></p>
         <p>Click on the map to get feature information</p>
+        <p><small>Map bounds restricted to Georgia territory</small></p>
     </div>
     <div id="map"></div>
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        const map = L.map('map').setView([41.7151, 44.8271], 8);
+        // Republic of Georgia coordinates - centered on Tbilisi
+        const georgiaCenter = [41.7151, 44.8271];
+        const georgiaZoom = 7;
+        
+        // Georgia boundaries (approximate)
+        const georgiaBounds = [
+            [39.5, 39.5],  // Southwest corner
+            [43.5, 46.5]   // Northeast corner
+        ];
+        
+        const map = L.map('map', {
+            center: georgiaCenter,
+            zoom: georgiaZoom,
+            maxBounds: georgiaBounds,
+            maxBoundsViscosity: 1.0
+        });
         
         L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        fetch('/api/geo/config')
-            .then(response => response.json())
-            .then(config => {
-                const wmsLayer = L.tileLayer.wms(config.geoserverUrl + '/' + config.workspace + '/wms', {
-                    layers: 'your_layer',
-                    format: 'image/png',
-                    transparent: true,
-                    attribution: 'GeoServer WMS'
-                }).addTo(map);
+        // Add Georgia country boundary for reference
+        const georgiaBoundary = [
+            [41.064, 40.095], [41.023, 40.321], [40.839, 40.204], [40.315, 40.065],
+            [39.955, 40.120], [39.688, 40.375], [39.877, 40.734], [40.246, 40.921],
+            [40.321, 41.447], [40.706, 41.736], [41.151, 41.736], [41.736, 42.614],
+            [42.386, 42.614], [42.614, 42.174], [43.451, 42.174], [43.582, 41.736],
+            [43.743, 41.151], [43.451, 40.839], [43.321, 40.580], [42.878, 40.321],
+            [42.614, 40.204], [42.174, 40.065], [41.736, 40.120], [41.447, 40.246],
+            [41.238, 40.375], [41.064, 40.095]
+        ];
 
-                map.on('click', function(e) {
-                    const url = config.geoserverUrl + '/' + config.workspace + '/wms?' +
-                        'SERVICE=WMS&VERSION=1.1.1&REQUEST=GetFeatureInfo&' +
-                        'LAYERS=your_layer&QUERY_LAYERS=your_layer&' +
-                        'BBOX=' + map.getBounds().toBBoxString() + '&' +
-                        'FEATURE_COUNT=1&HEIGHT=' + map.getSize().y + '&WIDTH=' + map.getSize().x + '&' +
-                        'INFO_FORMAT=application/json&SRS=EPSG:4326&' +
-                        'X=' + map.layerPointToContainerPoint(e.layerPoint).x + '&' +
-                        'Y=' + map.layerPointToContainerPoint(e.layerPoint).y;
+        L.polygon(georgiaBoundary, {
+            color: '#333',
+            weight: 2,
+            opacity: 0.8,
+            fillColor: 'transparent',
+            fillOpacity: 0
+        }).addTo(map);
 
-                    fetch(url)
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.features && data.features.length) {
-                                const props = data.features[0].properties;
-                                let html = '<h4>Feature Information</h4>';
-                                for (let key in props) {
-                                    html += '<b>' + key + '</b>: ' + props[key] + '<br>';
-                                }
-                                L.popup()
-                                    .setLatLng(e.latlng)
-                                    .setContent(html)
-                                    .openOn(map);
-                            }
-                        })
-                        .catch(err => console.log('Error fetching feature info:', err));
+        let config = {};
+        let layers = {};
+        let wmsLayers = {};
+
+        // Load configuration and layers
+        Promise.all([
+            fetch('/api/geo/config').then(r => r.json()),
+            fetch('/api/geo/layers/available').then(r => r.json())
+        ]).then(([configData, layersData]) => {
+            config = configData;
+            
+            // Create layer controls
+            const layerToggles = document.getElementById('layer-toggles');
+            
+            layersData.forEach(layer => {
+                // Create layer control
+                const layerControl = document.createElement('div');
+                layerControl.className = 'layer-control';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = layer.name;
+                checkbox.checked = true;
+                
+                const label = document.createElement('label');
+                label.htmlFor = layer.name;
+                
+                const colorDiv = document.createElement('div');
+                colorDiv.className = 'layer-color';
+                colorDiv.style.backgroundColor = layer.color;
+                
+                const labelText = document.createTextNode(layer.displayName);
+                
+                label.appendChild(colorDiv);
+                label.appendChild(labelText);
+                
+                layerControl.appendChild(checkbox);
+                layerControl.appendChild(label);
+                layerToggles.appendChild(layerControl);
+                
+                // Load GeoJSON data and create layer
+                loadGeoJSONLayer(layer);
+                
+                // Add toggle functionality
+                checkbox.addEventListener('change', function() {
+                    if (this.checked && layers[layer.name]) {
+                        layers[layer.name].addTo(map);
+                    } else if (layers[layer.name]) {
+                        map.removeLayer(layers[layer.name]);
+                    }
                 });
-            })
-            .catch(err => console.log('Error loading config:', err));
+            });
+        })
+        .catch(err => console.log('Error loading configuration:', err));
+
+        function loadGeoJSONLayer(layerConfig) {
+            const url = `/api/geo/${layerConfig.name}/geojson`;
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    let style = {};
+                    let pointToLayer = null;
+                    
+                    // Set style based on layer type
+                    if (layerConfig.name === 'forests') {
+                        style = {
+                            fillColor: '#228B22',
+                            fillOpacity: 0.6,
+                            color: '#006400',
+                            weight: 2
+                        };
+                    } else if (layerConfig.name === 'roads') {
+                        style = {
+                            color: '#FF6347',
+                            weight: 3,
+                            opacity: 0.8
+                        };
+                    } else if (layerConfig.name === 'factories') {
+                        style = {
+                            color: '#4169E1',
+                            fillColor: '#4169E1',
+                            fillOpacity: 0.7
+                        };
+                        pointToLayer = function(feature, latlng) {
+                            return L.circleMarker(latlng, {
+                                radius: 8,
+                                color: '#4169E1',
+                                fillColor: '#4169E1',
+                                fillOpacity: 0.7,
+                                weight: 2
+                            });
+                        };
+                    }
+                    
+                    // Create Leaflet layer
+                    const layer = L.geoJSON(data, {
+                        style: style,
+                        pointToLayer: pointToLayer,
+                        onEachFeature: function(feature, layer) {
+                            // Add popup with feature information
+                            let html = '<h4>Feature Information</h4>';
+                            html += '<strong>Layer:</strong> ' + layerConfig.displayName + '<br>';
+                            for (let key in feature.properties) {
+                                if (key !== 'id') {
+                                    html += '<b>' + key + '</b>: ' + feature.properties[key] + '<br>';
+                                }
+                            }
+                            layer.bindPopup(html);
+                        }
+                    });
+                    
+                    // Store layer and add to map
+                    layers[layerConfig.name] = layer;
+                    layer.addTo(map);
+                })
+                .catch(err => console.log('Error loading layer:', layerConfig.name, err));
+        }
     </script>
 </body>
 </html>
