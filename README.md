@@ -2,25 +2,47 @@
 
 Interactive GIS Map using Spring Boot, GeoServer, PostGIS, and Leaflet.js
 
-## Prerequisites
+## 🚀 Quick Start
 
-- Java 17+
-- Maven 3.6+
-- Docker & Docker Compose
+### Option 1: Using Convenience Scripts (Recommended)
 
-## Quick Start
+1. **Install dependencies:**
+   ```bash
+   ./install.sh
+   ```
 
-1. **Start the infrastructure:**
+2. **Start the application:**
+   ```bash
+   ./start.sh
+   ```
+
+3. **Access the application:**
+   - Map Interface: http://localhost:8081/map
+   - GeoServer Admin: http://localhost:8080/geoserver (admin/admin)
+
+4. **Stop the application:**
+   ```bash
+   ./stop.sh
+   ```
+
+### Option 2: Manual Setup
+
+1. **Install prerequisites:**
+   - Java 17+
+   - Maven 3.6+
+   - Docker & Docker Compose
+
+2. **Start the infrastructure:**
    ```bash
    docker-compose up -d
    ```
 
-2. **Build and run the application:**
+3. **Build and run the application:**
    ```bash
    mvn spring-boot:run
    ```
 
-3. **Access the application:**
+4. **Access the application:**
    - Map Interface: http://localhost:8081/map
    - GeoServer Admin: http://localhost:8080/geoserver (admin/admin)
 
@@ -57,6 +79,48 @@ The application follows standard Spring Boot structure:
 - Services: `src/main/java/ge/devspace/gismap/service/`
 - Configuration: `src/main/java/ge/devspace/gismap/config/`
 - Templates: `src/main/resources/templates/`
+
+## 📜 Scripts Reference
+
+### install.sh
+Installs all required dependencies and sets up the development environment:
+- Docker & Docker Compose
+- Java 17
+- Maven
+- Creates necessary directories
+
+```bash
+./install.sh
+```
+
+### start.sh
+Starts all services in the correct order:
+- PostgreSQL/PostGIS database
+- GeoServer
+- Spring Boot application
+- Verifies all services are ready
+
+```bash
+./start.sh
+```
+
+### stop.sh
+Gracefully stops all services:
+- Spring Boot application
+- Docker containers
+- Cleans up log files
+
+```bash
+./stop.sh           # Graceful stop
+./stop.sh --force   # Force stop all processes
+```
+
+## 🗺️ Sample Data
+
+The application includes sample data for Tbilisi, Georgia:
+- **8 Factories**: Various industries (wine, steel, textile, automotive, pharmaceutical)
+- **6 Major Roads**: Including Rustaveli Ave, Agmashenebeli Ave, Vazha-Pshavela Ave
+- **4 Forest Areas**: Mtatsminda Park, Vake Park, Turtle Lake, Lisi Lake
 
 ## Author
 

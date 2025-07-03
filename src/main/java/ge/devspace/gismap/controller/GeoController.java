@@ -16,8 +16,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Optional;
 import org.locationtech.jts.geom.Geometry;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.io.WKTWriter;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/geo")
@@ -37,6 +41,8 @@ public class GeoController {
 
     @Autowired
     private GeoServerService geoServerService;
+
+    private final GeometryFactory geometryFactory = new GeometryFactory();
 
     @GetMapping("/config")
     public ResponseEntity<Map<String, Object>> getGeoConfig() {
@@ -198,5 +204,90 @@ public class GeoController {
         }
         
         return geometry;
+    }
+
+    // CRUD Operations for Factories
+    
+    @PostMapping("/factories")
+    public ResponseEntity<Factory> createFactory(@RequestBody Map<String, Object> factoryData) {
+        try {
+            Factory factory = new Factory();
+            factory.setName((String) factoryData.get("name"));
+            factory.setIndustryType((String) factoryData.get("industryType"));
+            factory.setCapacity((Integer) factoryData.get("capacity"));
+            factory.setEstablishedYear((Integer) factoryData.get("establishedYear"));
+            factory.setStatus((String) factoryData.get("status"));
+            
+            // Create geometry from coordinates
+            Double longitude = (Double) factoryData.get("longitude");
+            Double latitude = (Double) factoryData.get("latitude");
+            Geometry geometry = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+            factory.setGeometry(geometry);
+            
+            Factory savedFactory = factoryRepository.save(factory);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedFactory);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    @GetMapping("/factories/{id}")
+    public ResponseEntity<Map<String, Object>> getFactory(@PathVariable Long id) {
+        Optional<Factory> factory = factoryRepository.findById(id);
+        if (factory.isPresent()) {
+            Map<String, Object> response = new HashMap<>();
+            Factory f = factory.get();
+            response.put("id", f.getId());
+            response.put("name", f.getName());
+            response.put("industryType", f.getIndustryType());
+            response.put("capacity", f.getCapacity());
+            response.put("establishedYear", f.getEstablishedYear());
+            response.put("status", f.getStatus());
+            response.put("longitude", f.getGeometry().getCoordinate().x);
+            response.put("latitude", f.getGeometry().getCoordinate().y);
+            return ResponseEntity.ok(response);
+        }
+        return ResponseEntity.notFound().build();
+    }
+    
+    @PutMapping("/factories/{id}")
+    public ResponseEntity<Factory> updateFactory(@PathVariable Long id, @RequestBody Map<String, Object> factoryData) {
+        Optional<Factory> existingFactory = factoryRepository.findById(id);
+        if (existingFactory.isPresent()) {
+            try {
+                Factory factory = existingFactory.get();
+                factory.setName((String) factoryData.get("name"));
+                factory.setIndustryType((String) factoryData.get("industryType"));
+                factory.setCapacity((Integer) factoryData.get("capacity"));
+                factory.setEstablishedYear((Integer) factoryData.get("establishedYear"));
+                factory.setStatus((String) factoryData.get("status"));
+                
+                // Update geometry if coordinates provided
+                if (factoryData.containsKey("longitude") && factoryData.containsKey("latitude")) {
+                    Double longitude = (Double) factoryData.get("longitude");
+                    Double latitude = (Double) factoryData.get("latitude");
+                    Geometry geometry = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+                    factory.setGeometry(geometry);
+                }
+                
+                Factory savedFactory = factoryRepository.save(factory);
+                return ResponseEntity.ok(savedFactory);
+            } catch (Exception e) {
+                return ResponseEntity.badRequest().build();
+            }
+        }
+        return ResponseEntity.notFound().build();
+    }
+    
+    @DeleteMapping("/factories/{id}")
+    public ResponseEntity<Map<String, Object>> deleteFactory(@PathVariable Long id) {
+        if (factoryRepository.existsById(id)) {
+            factoryRepository.deleteById(id);
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Factory deleted successfully");
+            response.put("id", id);
+            return ResponseEntity.ok(response);
+        }
+        return ResponseEntity.notFound().build();
     }
 }

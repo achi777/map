@@ -57,6 +57,69 @@
             margin-right: 8px;
             border: 1px solid #ccc;
         }
+        .factory-panel {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .factory-form {
+            margin-top: 10px;
+        }
+        .factory-form input, .factory-form select {
+            width: 100%;
+            margin: 5px 0;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .factory-form button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px 5px 5px 0;
+        }
+        .factory-form button:hover {
+            background: #0056b3;
+        }
+        .factory-form button.delete {
+            background: #dc3545;
+        }
+        .factory-form button.delete:hover {
+            background: #c82333;
+        }
+        .factory-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .factory-item {
+            padding: 8px;
+            border: 1px solid #eee;
+            margin: 5px 0;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .factory-item:hover {
+            background: #f8f9fa;
+        }
+        .factory-item.selected {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -72,6 +135,53 @@
         <p>Click on the map to get feature information</p>
         <p><small>Map bounds restricted to Georgia territory</small></p>
     </div>
+    
+    <div class="factory-panel">
+        <h4>Factory Management</h4>
+        <button onclick="toggleFactoryForm()" id="toggle-form-btn">Add New Factory</button>
+        
+        <div id="factory-form" class="factory-form hidden">
+            <h5 id="form-title">Add New Factory</h5>
+            <input type="text" id="factory-name" placeholder="Factory Name" required>
+            <select id="factory-industry" required>
+                <option value="">Select Industry Type</option>
+                <option value="Food & Beverage">Food & Beverage</option>
+                <option value="Heavy Industry">Heavy Industry</option>
+                <option value="Textile">Textile</option>
+                <option value="Automotive">Automotive</option>
+                <option value="Pharmaceutical">Pharmaceutical</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Chemical">Chemical</option>
+                <option value="Other">Other</option>
+            </select>
+            <input type="number" id="factory-capacity" placeholder="Capacity" min="1">
+            <input type="number" id="factory-year" placeholder="Established Year" min="1800" max="2024">
+            <select id="factory-status" required>
+                <option value="">Select Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Closed">Closed</option>
+                <option value="Under Construction">Under Construction</option>
+            </select>
+            <input type="number" id="factory-longitude" placeholder="Longitude" step="0.000001" required>
+            <input type="number" id="factory-latitude" placeholder="Latitude" step="0.000001" required>
+            <small>Click on the map to set coordinates automatically</small>
+            
+            <div>
+                <button onclick="saveFactory()" id="save-btn">Save Factory</button>
+                <button onclick="cancelForm()">Cancel</button>
+                <button onclick="deleteFactory()" id="delete-btn" class="delete hidden">Delete</button>
+            </div>
+        </div>
+        
+        <div class="factory-list" id="factory-list">
+            <h5>Existing Factories</h5>
+            <div id="factories-container">
+                <!-- Factory items will be populated here -->
+            </div>
+        </div>
+    </div>
+    
     <div id="map"></div>
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -234,6 +344,178 @@
                 })
                 .catch(err => console.log('Error loading layer:', layerConfig.name, err));
         }
+
+        // Factory Management Functions
+        let editingFactoryId = null;
+        let coordinatePickingMode = false;
+        
+        function toggleFactoryForm() {
+            const form = document.getElementById('factory-form');
+            const btn = document.getElementById('toggle-form-btn');
+            
+            if (form.classList.contains('hidden')) {
+                form.classList.remove('hidden');
+                btn.textContent = 'Hide Form';
+                loadFactoryList();
+            } else {
+                form.classList.add('hidden');
+                btn.textContent = 'Add New Factory';
+                clearForm();
+            }
+        }
+        
+        function clearForm() {
+            document.getElementById('factory-name').value = '';
+            document.getElementById('factory-industry').value = '';
+            document.getElementById('factory-capacity').value = '';
+            document.getElementById('factory-year').value = '';
+            document.getElementById('factory-status').value = '';
+            document.getElementById('factory-longitude').value = '';
+            document.getElementById('factory-latitude').value = '';
+            document.getElementById('form-title').textContent = 'Add New Factory';
+            document.getElementById('save-btn').textContent = 'Save Factory';
+            document.getElementById('delete-btn').classList.add('hidden');
+            editingFactoryId = null;
+        }
+        
+        function saveFactory() {
+            const factoryData = {
+                name: document.getElementById('factory-name').value,
+                industryType: document.getElementById('factory-industry').value,
+                capacity: parseInt(document.getElementById('factory-capacity').value) || 0,
+                establishedYear: parseInt(document.getElementById('factory-year').value) || new Date().getFullYear(),
+                status: document.getElementById('factory-status').value,
+                longitude: parseFloat(document.getElementById('factory-longitude').value),
+                latitude: parseFloat(document.getElementById('factory-latitude').value)
+            };
+            
+            if (!factoryData.name || !factoryData.industryType || !factoryData.status || 
+                isNaN(factoryData.longitude) || isNaN(factoryData.latitude)) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            const url = editingFactoryId ? `/api/geo/factories/${editingFactoryId}` : '/api/geo/factories';
+            const method = editingFactoryId ? 'PUT' : 'POST';
+            
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(factoryData)
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert(editingFactoryId ? 'Factory updated successfully!' : 'Factory created successfully!');
+                    clearForm();
+                    loadFactoryList();
+                    refreshFactoryLayer();
+                } else {
+                    alert('Error saving factory');
+                }
+            })
+            .catch(err => {
+                console.error('Error saving factory:', err);
+                alert('Error saving factory');
+            });
+        }
+        
+        function editFactory(id) {
+            fetch(`/api/geo/factories/${id}`)
+                .then(response => response.json())
+                .then(factory => {
+                    document.getElementById('factory-name').value = factory.name;
+                    document.getElementById('factory-industry').value = factory.industryType;
+                    document.getElementById('factory-capacity').value = factory.capacity;
+                    document.getElementById('factory-year').value = factory.establishedYear;
+                    document.getElementById('factory-status').value = factory.status;
+                    document.getElementById('factory-longitude').value = factory.longitude;
+                    document.getElementById('factory-latitude').value = factory.latitude;
+                    
+                    document.getElementById('form-title').textContent = 'Edit Factory';
+                    document.getElementById('save-btn').textContent = 'Update Factory';
+                    document.getElementById('delete-btn').classList.remove('hidden');
+                    document.getElementById('factory-form').classList.remove('hidden');
+                    
+                    editingFactoryId = id;
+                })
+                .catch(err => {
+                    console.error('Error loading factory:', err);
+                    alert('Error loading factory data');
+                });
+        }
+        
+        function deleteFactory() {
+            if (!editingFactoryId) return;
+            
+            if (confirm('Are you sure you want to delete this factory?')) {
+                fetch(`/api/geo/factories/${editingFactoryId}`, { method: 'DELETE' })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('Factory deleted successfully!');
+                            clearForm();
+                            loadFactoryList();
+                            refreshFactoryLayer();
+                        } else {
+                            alert('Error deleting factory');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Error deleting factory:', err);
+                        alert('Error deleting factory');
+                    });
+            }
+        }
+        
+        function loadFactoryList() {
+            fetch('/api/geo/factories')
+                .then(response => response.json())
+                .then(factories => {
+                    const container = document.getElementById('factories-container');
+                    container.innerHTML = '';
+                    
+                    factories.forEach(factory => {
+                        const item = document.createElement('div');
+                        item.className = 'factory-item';
+                        item.innerHTML = `
+                            <strong>${factory.name}</strong><br>
+                            <small>${factory.industryType} - ${factory.status}</small>
+                        `;
+                        item.onclick = () => editFactory(factory.id);
+                        container.appendChild(item);
+                    });
+                })
+                .catch(err => console.error('Error loading factories:', err));
+        }
+        
+        function refreshFactoryLayer() {
+            // Reload the factories layer
+            const factoryLayerConfig = { name: 'factories', displayName: 'Factories' };
+            if (layers['factories']) {
+                map.removeLayer(layers['factories']);
+                loadGeoJSONLayer(factoryLayerConfig);
+            }
+        }
+        
+        function cancelForm() {
+            clearForm();
+            document.getElementById('factory-form').classList.add('hidden');
+            document.getElementById('toggle-form-btn').textContent = 'Add New Factory';
+        }
+        
+        // Add click handler for coordinate picking
+        map.on('click', function(e) {
+            const form = document.getElementById('factory-form');
+            if (!form.classList.contains('hidden')) {
+                // If factory form is open, set coordinates
+                document.getElementById('factory-longitude').value = e.latlng.lng.toFixed(6);
+                document.getElementById('factory-latitude').value = e.latlng.lat.toFixed(6);
+            }
+        });
+        
+        // Load factory list on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(loadFactoryList, 1000); // Wait for page to fully load
+        });
     </script>
 </body>
 </html>
