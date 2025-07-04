@@ -4,11 +4,18 @@ import ge.devspace.gismap.config.GeoServerConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.nio.charset.StandardCharsets;
 
 @Service
 public class GeoServerService {
@@ -91,14 +98,14 @@ public class GeoServerService {
                 break;
             case "roads":
                 style.put("color", "#FF6347");
-                style.put("weight", 3);
+                style.put("weight", 5);
                 style.put("opacity", 0.8);
                 break;
             case "factories":
                 style.put("color", "#4169E1");
                 style.put("fillColor", "#4169E1");
-                style.put("fillOpacity", 0.7);
-                style.put("radius", 8);
+                style.put("fillOpacity", 0.8);
+                style.put("radius", 12);
                 break;
             default:
                 style.put("color", "#000000");
@@ -106,5 +113,126 @@ public class GeoServerService {
         }
         
         return style;
+    }
+
+    private HttpHeaders createAuthHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        String auth = geoServerConfig.getUsername() + ":" + geoServerConfig.getPassword();
+        byte[] encodedAuth = Base64.getEncoder().encode(auth.getBytes(StandardCharsets.UTF_8));
+        String authHeader = "Basic " + new String(encodedAuth);
+        headers.set("Authorization", authHeader);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return headers;
+    }
+
+    public boolean createWorkspace() {
+        try {
+            String url = geoServerConfig.getBaseUrl() + "/rest/workspaces";
+            HttpHeaders headers = createAuthHeaders();
+            
+            Map<String, Object> workspace = new HashMap<>();
+            Map<String, String> workspaceData = new HashMap<>();
+            workspaceData.put("name", geoServerConfig.getWorkspace());
+            workspace.put("workspace", workspaceData);
+            
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(workspace, headers);
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+            
+            return response.getStatusCode().is2xxSuccessful();
+        } catch (Exception e) {
+            System.err.println("Error creating workspace: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean createDataStore() {
+        try {
+            String url = geoServerConfig.getBaseUrl() + "/rest/workspaces/" + 
+                        geoServerConfig.getWorkspace() + "/datastores";
+            HttpHeaders headers = createAuthHeaders();
+            
+            Map<String, Object> dataStore = new HashMap<>();
+            Map<String, Object> dataStoreData = new HashMap<>();
+            dataStoreData.put("name", "postgis_store");
+            dataStoreData.put("type", "PostGIS");
+            dataStoreData.put("enabled", true);
+            
+            Map<String, Object> connectionParams = new HashMap<>();
+            connectionParams.put("host", "db");
+            connectionParams.put("port", "5432");
+            connectionParams.put("database", "gisdb");
+            connectionParams.put("user", "gisuser");
+            connectionParams.put("passwd", "gispassword");
+            connectionParams.put("dbtype", "postgis");
+            connectionParams.put("schema", "public");
+            
+            dataStoreData.put("connectionParameters", connectionParams);
+            dataStore.put("dataStore", dataStoreData);
+            
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(dataStore, headers);
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+            
+            return response.getStatusCode().is2xxSuccessful();
+        } catch (Exception e) {
+            System.err.println("Error creating datastore: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean publishLayer(String tableName, String layerName) {
+        try {
+            // First create feature type
+            String url = geoServerConfig.getBaseUrl() + "/rest/workspaces/" + 
+                        geoServerConfig.getWorkspace() + "/datastores/postgis_store/featuretypes";
+            HttpHeaders headers = createAuthHeaders();
+            
+            Map<String, Object> featureType = new HashMap<>();
+            Map<String, Object> featureTypeData = new HashMap<>();
+            featureTypeData.put("name", layerName);
+            featureTypeData.put("nativeName", tableName);
+            featureTypeData.put("title", layerName);
+            featureTypeData.put("srs", "EPSG:4326");
+            featureTypeData.put("enabled", true);
+            
+            featureType.put("featureType", featureTypeData);
+            
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(featureType, headers);
+            ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+            
+            return response.getStatusCode().is2xxSuccessful();
+        } catch (Exception e) {
+            System.err.println("Error publishing layer: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean setupGeoServer() {
+        System.out.println("Setting up GeoServer integration...");
+        
+        boolean workspaceCreated = createWorkspace();
+        if (!workspaceCreated) {
+            System.out.println("Workspace already exists or creation failed, continuing...");
+        }
+        
+        boolean dataStoreCreated = createDataStore();
+        if (!dataStoreCreated) {
+            System.out.println("DataStore already exists or creation failed, continuing...");
+        }
+        
+        boolean factoriesPublished = publishLayer("factories", "factories");
+        boolean roadsPublished = publishLayer("roads", "roads");
+        boolean forestsPublished = publishLayer("forests", "forests");
+        
+        if (factoriesPublished && roadsPublished && forestsPublished) {
+            System.out.println("✅ All layers published to GeoServer successfully!");
+            return true;
+        } else {
+            System.out.println("⚠️ Some layers may already exist in GeoServer");
+            return true; // Continue anyway
+        }
+    }
+
+    public void syncLayerToGeoServer(String layerName) {
+        publishLayer(layerName, layerName);
     }
 }

@@ -274,6 +274,10 @@
                     if (this.checked && layers[layer.name]) {
                         layers[layer.name].addTo(map);
                     } else if (layers[layer.name]) {
+                        // Remove click handler if it's a WMS layer
+                        if (layers[layer.name]._clickHandler) {
+                            map.off('click', layers[layer.name]._clickHandler);
+                        }
                         map.removeLayer(layers[layer.name]);
                     }
                 });
@@ -282,6 +286,138 @@
         .catch(err => console.log('Error loading configuration:', err));
 
         function loadGeoJSONLayer(layerConfig) {
+            // Try WMS first, fallback to GeoJSON
+            if (layerConfig.wmsUrl) {
+                loadWMSLayer(layerConfig);
+            } else {
+                loadDirectGeoJSONLayer(layerConfig);
+            }
+        }
+
+        function loadWMSLayer(layerConfig) {
+            try {
+                const wmsLayer = L.tileLayer.wms(layerConfig.wmsUrl, {
+                    layers: `gisproject:${layerConfig.name}`,
+                    format: 'image/png',
+                    transparent: true,
+                    version: '1.1.0',
+                    crs: L.CRS.EPSG4326,
+                    attribution: 'GeoServer WMS'
+                });
+
+                // Add click event for GetFeatureInfo - store reference to avoid duplicate listeners
+                const clickHandler = function(e) {
+                    if (layers[layerConfig.name] && map.hasLayer(layers[layerConfig.name])) {
+                        getFeatureInfo(layerConfig, e.latlng, e.containerPoint);
+                    }
+                };
+                
+                // Store click handler reference for this layer
+                wmsLayer._clickHandler = clickHandler;
+                map.on('click', clickHandler);
+
+                // Store layer and add to map
+                layers[layerConfig.name] = wmsLayer;
+                wmsLayer.addTo(map);
+                
+                console.log(`✅ Loaded WMS layer: ${layerConfig.name}`);
+            } catch (error) {
+                console.log(`⚠️ WMS failed for ${layerConfig.name}, falling back to GeoJSON`);
+                loadDirectGeoJSONLayer(layerConfig);
+            }
+        }
+
+        function getFeatureInfo(layerConfig, latlng, point) {
+            const bbox = map.getBounds();
+            const size = map.getSize();
+            
+            const wmsUrl = layerConfig.wmsUrl + 
+                '?SERVICE=WMS' +
+                '&VERSION=1.1.0' +
+                '&REQUEST=GetFeatureInfo' +
+                '&LAYERS=gisproject:' + layerConfig.name +
+                '&QUERY_LAYERS=gisproject:' + layerConfig.name +
+                '&INFO_FORMAT=application/json' +
+                '&FEATURE_COUNT=50' +
+                '&X=' + Math.round(point.x) +
+                '&Y=' + Math.round(point.y) +
+                '&SRS=EPSG:4326' +
+                '&BBOX=' + bbox.toBBoxString() +
+                '&WIDTH=' + size.x +
+                '&HEIGHT=' + size.y;
+
+            fetch(wmsUrl)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.features && data.features.length > 0) {
+                        const feature = data.features[0];
+                        let html = '<h4>' + layerConfig.displayName + ' ინფორმაცია</h4>';
+                        
+                        if (layerConfig.name === 'factories') {
+                            html += '<strong>სახელი:</strong> ' + (feature.properties.name || 'N/A') + '<br>';
+                            html += '<strong>ინდუსტრია:</strong> ' + (feature.properties.industry_type || 'N/A') + '<br>';
+                            html += '<strong>შესაძლებლობა:</strong> ' + (feature.properties.capacity || 'N/A') + '<br>';
+                            html += '<strong>დაარსების წელი:</strong> ' + (feature.properties.established_year || 'N/A') + '<br>';
+                            html += '<strong>სტატუსი:</strong> ' + (feature.properties.status || 'N/A') + '<br>';
+                        } else {
+                            for (let key in feature.properties) {
+                                if (key !== 'id' && feature.properties[key] !== null) {
+                                    html += '<strong>' + key + ':</strong> ' + feature.properties[key] + '<br>';
+                                }
+                            }
+                        }
+                        
+                        L.popup()
+                            .setLatLng(latlng)
+                            .setContent(html)
+                            .openOn(map);
+                    }
+                })
+                .catch(err => {
+                    console.log('GetFeatureInfo error:', err);
+                    // Fallback to direct API call
+                    if (layerConfig.name === 'factories') {
+                        getFactoryInfoFallback(latlng);
+                    }
+                });
+        }
+
+        function getFactoryInfoFallback(latlng) {
+            // Get all factories and find the closest one
+            fetch('/api/geo/factories')
+                .then(response => response.json())
+                .then(factories => {
+                    let closestFactory = null;
+                    let minDistance = Infinity;
+                    
+                    factories.forEach(factory => {
+                        const factoryLatLng = L.latLng(factory.latitude, factory.longitude);
+                        const distance = latlng.distanceTo(factoryLatLng);
+                        
+                        if (distance < minDistance && distance < 1000) { // Within 1km
+                            minDistance = distance;
+                            closestFactory = factory;
+                        }
+                    });
+                    
+                    if (closestFactory) {
+                        let html = '<h4>Factory ინფორმაცია</h4>';
+                        html += '<strong>სახელი:</strong> ' + closestFactory.name + '<br>';
+                        html += '<strong>ინდუსტრია:</strong> ' + closestFactory.industryType + '<br>';
+                        html += '<strong>შესაძლებლობა:</strong> ' + closestFactory.capacity + '<br>';
+                        html += '<strong>დაარსების წელი:</strong> ' + closestFactory.establishedYear + '<br>';
+                        html += '<strong>სტატუსი:</strong> ' + closestFactory.status + '<br>';
+                        
+                        L.popup()
+                            .setLatLng(latlng)
+                            .setContent(html)
+                            .openOn(map);
+                    }
+                })
+                .catch(err => console.log('Factory fallback error:', err));
+        }
+
+        function loadDirectGeoJSONLayer(layerConfig) {
             const url = `/api/geo/${layerConfig.name}/geojson`;
             
             fetch(url)
@@ -301,22 +437,22 @@
                     } else if (layerConfig.name === 'roads') {
                         style = {
                             color: '#FF6347',
-                            weight: 3,
+                            weight: 5,
                             opacity: 0.8
                         };
                     } else if (layerConfig.name === 'factories') {
                         style = {
                             color: '#4169E1',
                             fillColor: '#4169E1',
-                            fillOpacity: 0.7
+                            fillOpacity: 0.8
                         };
                         pointToLayer = function(feature, latlng) {
                             return L.circleMarker(latlng, {
-                                radius: 8,
+                                radius: 12,
                                 color: '#4169E1',
                                 fillColor: '#4169E1',
-                                fillOpacity: 0.7,
-                                weight: 2
+                                fillOpacity: 0.8,
+                                weight: 3
                             });
                         };
                     }
@@ -327,13 +463,33 @@
                         pointToLayer: pointToLayer,
                         onEachFeature: function(feature, layer) {
                             // Add popup with feature information
-                            let html = '<h4>Feature Information</h4>';
-                            html += '<strong>Layer:</strong> ' + layerConfig.displayName + '<br>';
-                            for (let key in feature.properties) {
-                                if (key !== 'id') {
-                                    html += '<b>' + key + '</b>: ' + feature.properties[key] + '<br>';
+                            let html = '<h4>' + layerConfig.displayName + ' ინფორმაცია</h4>';
+                            
+                            if (layerConfig.name === 'factories') {
+                                html += '<strong>სახელი:</strong> ' + (feature.properties.name || 'N/A') + '<br>';
+                                html += '<strong>ინდუსტრია:</strong> ' + (feature.properties.industryType || 'N/A') + '<br>';
+                                html += '<strong>შესაძლებლობა:</strong> ' + (feature.properties.capacity || 'N/A') + '<br>';
+                                html += '<strong>დაარსების წელი:</strong> ' + (feature.properties.establishedYear || 'N/A') + '<br>';
+                                html += '<strong>სტატუსი:</strong> ' + (feature.properties.status || 'N/A') + '<br>';
+                            } else if (layerConfig.name === 'roads') {
+                                html += '<strong>სახელი:</strong> ' + (feature.properties.name || 'N/A') + '<br>';
+                                html += '<strong>გზის ტიპი:</strong> ' + (feature.properties.roadType || 'N/A') + '<br>';
+                                html += '<strong>სიგრძე (კმ):</strong> ' + (feature.properties.lengthKm || 'N/A') + '<br>';
+                                html += '<strong>ზედაპირი:</strong> ' + (feature.properties.surfaceType || 'N/A') + '<br>';
+                                html += '<strong>მაქს. სიჩქარე:</strong> ' + (feature.properties.maxSpeed || 'N/A') + ' კმ/სთ<br>';
+                            } else if (layerConfig.name === 'forests') {
+                                html += '<strong>სახელი:</strong> ' + (feature.properties.name || 'N/A') + '<br>';
+                                html += '<strong>ტყის ტიპი:</strong> ' + (feature.properties.forestType || 'N/A') + '<br>';
+                                html += '<strong>ფართობი (ჰა):</strong> ' + (feature.properties.areaHectares || 'N/A') + '<br>';
+                                html += '<strong>დაცვის სტატუსი:</strong> ' + (feature.properties.protectionStatus || 'N/A') + '<br>';
+                            } else {
+                                for (let key in feature.properties) {
+                                    if (key !== 'id' && feature.properties[key] !== null) {
+                                        html += '<strong>' + key + ':</strong> ' + feature.properties[key] + '<br>';
+                                    }
                                 }
                             }
+                            
                             layer.bindPopup(html);
                         }
                     });
@@ -341,6 +497,8 @@
                     // Store layer and add to map
                     layers[layerConfig.name] = layer;
                     layer.addTo(map);
+                    
+                    console.log(`✅ Loaded GeoJSON layer: ${layerConfig.name}`);
                 })
                 .catch(err => console.log('Error loading layer:', layerConfig.name, err));
         }
@@ -488,11 +646,18 @@
         }
         
         function refreshFactoryLayer() {
-            // Reload the factories layer
-            const factoryLayerConfig = { name: 'factories', displayName: 'Factories' };
+            // Reload the factories layer with WMS support
+            const factoryLayerConfig = { 
+                name: 'factories', 
+                displayName: 'Factories',
+                wmsUrl: 'http://localhost:8080/geoserver/gisproject/wms'
+            };
             if (layers['factories']) {
                 map.removeLayer(layers['factories']);
-                loadGeoJSONLayer(factoryLayerConfig);
+                // Add small delay to ensure GeoServer sync is complete
+                setTimeout(() => {
+                    loadGeoJSONLayer(factoryLayerConfig);
+                }, 2000);
             }
         }
         

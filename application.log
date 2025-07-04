@@ -1,0 +1,78 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< ge.devspace:gis-map >-------------------------
+[INFO] Building GIS Map Application 1.0.0
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.2.5:run (default-cli) > test-compile @ gis-map >>>
+[WARNING] The artifact org.hibernate:hibernate-spatial:jar:6.2.5.Final has been relocated to org.hibernate.orm:hibernate-spatial:jar:6.2.5.Final
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ gis-map ---
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] Copying 1 resource from src/main/resources to target/classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ gis-map ---
+[INFO] Nothing to compile - all classes are up to date
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ gis-map ---
+[INFO] skip non existing resourceDirectory /Users/archilodishelidze/Desktop/dev/map/src/test/resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ gis-map ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] <<< spring-boot:3.2.5:run (default-cli) < test-compile @ gis-map <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.2.5:run (default-cli) @ gis-map ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+[32m :: Spring Boot :: [39m              [2m (v3.2.5)[0;39m
+
+[2m2025-07-04T15:43:21.334+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mge.devspace.gismap.GisMapApplication    [0;39m [2m:[0;39m Starting GisMapApplication using Java 23.0.2 with PID 83506 (/Users/archilodishelidze/Desktop/dev/map/target/classes started by archilodishelidze in /Users/archilodishelidze/Desktop/dev/map)
+[2m2025-07-04T15:43:21.335+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mge.devspace.gismap.GisMapApplication    [0;39m [2m:[0;39m No active profile set, falling back to 1 default profile: "default"
+[2m2025-07-04T15:43:21.562+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36m.s.d.r.c.RepositoryConfigurationDelegate[0;39m [2m:[0;39m Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+[2m2025-07-04T15:43:21.585+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36m.s.d.r.c.RepositoryConfigurationDelegate[0;39m [2m:[0;39m Finished Spring Data repository scanning in 18 ms. Found 3 JPA repository interfaces.
+[2m2025-07-04T15:43:21.949+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mo.s.b.w.embedded.tomcat.TomcatWebServer [0;39m [2m:[0;39m Tomcat initialized with port 8081 (http)
+[2m2025-07-04T15:43:21.957+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mo.apache.catalina.core.StandardService  [0;39m [2m:[0;39m Starting service [Tomcat]
+[2m2025-07-04T15:43:21.957+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mo.apache.catalina.core.StandardEngine   [0;39m [2m:[0;39m Starting Servlet engine: [Apache Tomcat/10.1.20]
+[2m2025-07-04T15:43:21.992+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mo.a.c.c.C.[Tomcat].[localhost].[/]      [0;39m [2m:[0;39m Initializing Spring embedded WebApplicationContext
+[2m2025-07-04T15:43:21.993+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mw.s.c.ServletWebServerApplicationContext[0;39m [2m:[0;39m Root WebApplicationContext: initialization completed in 636 ms
+[2m2025-07-04T15:43:22.088+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mo.hibernate.jpa.internal.util.LogHelper [0;39m [2m:[0;39m HHH000204: Processing PersistenceUnitInfo [name: default]
+[2m2025-07-04T15:43:22.118+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36morg.hibernate.Version                   [0;39m [2m:[0;39m HHH000412: Hibernate ORM core version 6.4.4.Final
+[2m2025-07-04T15:43:22.123+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mo.h.spatial.integration.SpatialService  [0;39m [2m:[0;39m HHH80000001: hibernate-spatial integration enabled : true
+[2m2025-07-04T15:43:22.133+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mo.h.c.internal.RegionFactoryInitiator   [0;39m [2m:[0;39m HHH000026: Second-level cache disabled
+[2m2025-07-04T15:43:22.177+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mcom.zaxxer.hikari.HikariDataSource      [0;39m [2m:[0;39m HikariPool-1 - Starting...
+[2m2025-07-04T15:43:22.325+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mcom.zaxxer.hikari.pool.HikariPool       [0;39m [2m:[0;39m HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@a91119b
+[2m2025-07-04T15:43:22.326+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mcom.zaxxer.hikari.HikariDataSource      [0;39m [2m:[0;39m HikariPool-1 - Start completed.
+[2m2025-07-04T15:43:22.366+04:00[0;39m [33m WARN[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36morg.hibernate.orm.deprecation           [0;39m [2m:[0;39m HHH90000026: PostgisPG10Dialect has been deprecated; use org.hibernate.dialect.PostgreSQLDialect instead
+[2m2025-07-04T15:43:22.378+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36morg.hibernate.spatial                   [0;39m [2m:[0;39m HHH80000003: hibernate-spatial adding type contributions from : org.hibernate.spatial.dialect.postgis.PostgisDialectContributor
+[2m2025-07-04T15:43:22.444+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mo.s.o.j.p.SpringPersistenceUnitInfo     [0;39m [2m:[0;39m No LoadTimeWeaver setup: ignoring JPA class transformer
+[2m2025-07-04T15:43:22.453+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36morg.hibernate.spatial                   [0;39m [2m:[0;39m HHH80000003: hibernate-spatial adding type contributions from : org.hibernate.spatial.dialect.postgis.PostgisDialectContributor
+[2m2025-07-04T15:43:22.549+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36morg.hibernate.spatial                   [0;39m [2m:[0;39m HHH80000004: hibernate-spatial adding function contributions from : org.hibernate.spatial.dialect.postgis.PostgisDialectContributor
+[2m2025-07-04T15:43:22.795+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mo.h.e.t.j.p.i.JtaPlatformInitiator      [0;39m [2m:[0;39m HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+[2m2025-07-04T15:43:22.888+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mj.LocalContainerEntityManagerFactoryBean[0;39m [2m:[0;39m Initialized JPA EntityManagerFactory for persistence unit 'default'
+[2m2025-07-04T15:43:22.983+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mo.s.d.j.r.query.QueryEnhancerFactory    [0;39m [2m:[0;39m Hibernate is in classpath; If applicable, HQL parser will be used.
+[2m2025-07-04T15:43:23.230+04:00[0;39m [33m WARN[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mJpaBaseConfiguration$JpaWebConfiguration[0;39m [2m:[0;39m spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+[2m2025-07-04T15:43:23.392+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mo.s.b.w.embedded.tomcat.TomcatWebServer [0;39m [2m:[0;39m Tomcat started on port 8081 (http) with context path ''
+[2m2025-07-04T15:43:23.395+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [           main][0;39m [2m[0;39m[36mge.devspace.gismap.GisMapApplication    [0;39m [2m:[0;39m Started GisMapApplication in 2.253 seconds (process running for 2.402)
+Initializing sample data for Tbilisi...
+Sample data initialization completed.
+Setting up GeoServer integration...
+Error creating workspace: 409 : "<!doctype html><html lang="en"><head><title>HTTP Status 409 – Conflict</title><style type="text/css">body {font-family:Tahoma,Arial,sans-serif;} h1, h2, h3, b {color:white;background-color:#525D76;} h1 {font-size:22px;} h2 {font-size:16px;} h3 {font-size:14px;} p {font-size:12px;} a {color:black;} .line {height:1px;background-color:#525D76;border:none;}</style></head><body><h1>HTTP Status 409 – Conflict</h1><hr class="line" /><p><b>Type</b> Status Report</p><p><b>Message</b> Workspace &#39;gisproject&#39; already exists</p><p><b>Description</b> The request could not be completed due to a conflict with the current state of the target resource.</p><hr class="line" /><h3>Apache Tomcat/9.0.65</h3></body></html>"
+Workspace already exists or creation failed, continuing...
+Error creating datastore: 500 : "Store 'postgis_store' already exists in workspace 'gisproject'"
+DataStore already exists or creation failed, continuing...
+Error publishing layer: 500 : "Resource named 'factories' already exists in store: 'postgis_store'"
+Error publishing layer: 500 : "Resource named 'roads' already exists in store: 'postgis_store'"
+Error publishing layer: 500 : "Resource named 'forests' already exists in store: 'postgis_store'"
+⚠️ Some layers may already exist in GeoServer
+[2m2025-07-04T15:43:48.998+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [nio-8081-exec-1][0;39m [2m[0;39m[36mo.a.c.c.C.[Tomcat].[localhost].[/]      [0;39m [2m:[0;39m Initializing Spring DispatcherServlet 'dispatcherServlet'
+[2m2025-07-04T15:43:48.999+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [nio-8081-exec-1][0;39m [2m[0;39m[36mo.s.web.servlet.DispatcherServlet       [0;39m [2m:[0;39m Initializing Servlet 'dispatcherServlet'
+[2m2025-07-04T15:43:49.004+04:00[0;39m [32m INFO[0;39m [35m83506[0;39m [2m---[0;39m [2m[gis-map] [nio-8081-exec-1][0;39m [2m[0;39m[36mo.s.web.servlet.DispatcherServlet       [0;39m [2m:[0;39m Completed initialization in 5 ms

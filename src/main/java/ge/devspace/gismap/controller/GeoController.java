@@ -11,6 +11,7 @@ import ge.devspace.gismap.service.GeoServerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.scheduling.annotation.Async;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -225,6 +226,10 @@ public class GeoController {
             factory.setGeometry(geometry);
             
             Factory savedFactory = factoryRepository.save(factory);
+            
+            // Sync with GeoServer asynchronously
+            syncFactoryLayerAsync();
+            
             return ResponseEntity.status(HttpStatus.CREATED).body(savedFactory);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
@@ -271,6 +276,10 @@ public class GeoController {
                 }
                 
                 Factory savedFactory = factoryRepository.save(factory);
+                
+                // Sync with GeoServer asynchronously
+                syncFactoryLayerAsync();
+                
                 return ResponseEntity.ok(savedFactory);
             } catch (Exception e) {
                 return ResponseEntity.badRequest().build();
@@ -283,11 +292,25 @@ public class GeoController {
     public ResponseEntity<Map<String, Object>> deleteFactory(@PathVariable Long id) {
         if (factoryRepository.existsById(id)) {
             factoryRepository.deleteById(id);
+            
+            // Sync with GeoServer asynchronously
+            syncFactoryLayerAsync();
+            
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Factory deleted successfully");
             response.put("id", id);
             return ResponseEntity.ok(response);
         }
         return ResponseEntity.notFound().build();
+    }
+    
+    @Async
+    private void syncFactoryLayerAsync() {
+        try {
+            Thread.sleep(1000); // Small delay to ensure database transaction is committed
+            geoServerService.syncLayerToGeoServer("factories");
+        } catch (Exception e) {
+            System.err.println("Error syncing factory layer to GeoServer: " + e.getMessage());
+        }
     }
 }
