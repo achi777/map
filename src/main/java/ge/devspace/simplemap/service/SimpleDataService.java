@@ -2,8 +2,10 @@ package ge.devspace.simplemap.service;
 
 import ge.devspace.simplemap.entity.SimpleFactory;
 import ge.devspace.simplemap.entity.SimpleRoad;
+import ge.devspace.simplemap.entity.SimpleForest;
 import ge.devspace.simplemap.repository.SimpleFactoryRepository;
 import ge.devspace.simplemap.repository.SimpleRoadRepository;
+import ge.devspace.simplemap.repository.SimpleForestRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Service;
@@ -16,12 +18,16 @@ public class SimpleDataService implements CommandLineRunner {
     
     @Autowired
     private SimpleFactoryRepository factoryRepository;
+    
+    @Autowired
+    private SimpleForestRepository forestRepository;
 
     @Override
     public void run(String... args) throws Exception {
         // Clear existing data
         roadRepository.deleteAll();
         factoryRepository.deleteAll();
+        forestRepository.deleteAll();
 
         // Create sample roads around Tbilisi
         SimpleRoad road1 = new SimpleRoad("რუსთაველის გამზირი", "მთავარი გზა", "ასფალტი", 
@@ -59,5 +65,21 @@ public class SimpleDataService implements CommandLineRunner {
 
         SimpleFactory factory5 = new SimpleFactory("ლითონის ქარხანა", "ლითონი", "აქტიური", 400, 41.7250, 44.8250);
         factoryRepository.save(factory5);
+
+        // Create sample forests
+        SimpleForest forest1 = new SimpleForest("მთაწმინდის პარკი", "რეკრეაციული", 120.5, "მაღალი", "დაცული", 41.6953, 44.8017, null);
+        forestRepository.save(forest1);
+
+        SimpleForest forest2 = new SimpleForest("ვაკის პარკი", "საქალაქო პარკი", 35.2, "საშუალო", "დაცული", 41.7241, 44.7727, null);
+        forestRepository.save(forest2);
+
+        SimpleForest forest3 = new SimpleForest("კუს ტბის ტყე", "ბუნებრივი ტყე", 89.7, "მაღალი", "დაცული", 41.7389, 44.7583, null);
+        forestRepository.save(forest3);
+
+        SimpleForest forest4 = new SimpleForest("ლისის ტბის ტყე", "ბუნებრივი ტყე", 156.8, "მაღალი", "დაცული", 41.7833, 44.7167, null);
+        forestRepository.save(forest4);
+
+        SimpleForest forest5 = new SimpleForest("თბილისის ზღვის ტყე", "რეკრეაციული", 203.4, "საშუალო", "დაცული", 41.8167, 44.8833, null);
+        forestRepository.save(forest5);
     }
 }

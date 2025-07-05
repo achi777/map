@@ -230,6 +230,12 @@
         <div class="control-icon" onclick="togglePanel('factory-panel', this)" title="ქარხნების მართვა">
             🏭
         </div>
+        <div class="control-icon" onclick="togglePanel('roads-panel', this)" title="გზების მართვა">
+            🛣️
+        </div>
+        <div class="control-icon" onclick="togglePanel('forests-panel', this)" title="ტყეების მართვა">
+            🌲
+        </div>
         <div class="control-icon" onclick="togglePanel('routing-panel', this)" title="მარშრუტის დაგეგმვა">
             🚗
         </div>
@@ -301,6 +307,83 @@
         </div>
     </div>
 
+    <!-- Roads Management Panel -->
+    <div id="roads-panel" class="control-panel">
+        <button class="panel-close" onclick="closePanel('roads-panel')">×</button>
+        <h4>🛣️ გზების მართვა</h4>
+        
+        <div class="factory-form">
+            <input type="text" id="road-name" placeholder="გზის დასახელება" />
+            <select id="road-type">
+                <option value="">გზის ტიპი</option>
+                <option value="მთავარი გზა">მთავარი გზა</option>
+                <option value="მეორადი გზა">მეორადი გზა</option>
+                <option value="ადგილობრივი გზა">ადგილობრივი გზა</option>
+                <option value="ტროტუარი">ტროტუარი</option>
+            </select>
+            <select id="road-material">
+                <option value="">მასალა</option>
+                <option value="ასფალტი">ასფალტი</option>
+                <option value="ბეტონი">ბეტონი</option>
+                <option value="ბიტუმი">ბიტუმი</option>
+                <option value="ღია ნიადაგი">ღია ნიადაგი</option>
+            </select>
+            <input type="number" id="road-startLat" placeholder="საწყისი განედი" step="0.000001" />
+            <input type="number" id="road-startLng" placeholder="საწყისი გრძედი" step="0.000001" />
+            <input type="number" id="road-endLat" placeholder="საბოლოო განედი" step="0.000001" />
+            <input type="number" id="road-endLng" placeholder="საბოლოო გრძედი" step="0.000001" />
+            <input type="number" id="road-length" placeholder="სიგრძე (კმ)" step="0.1" />
+            
+            <button onclick="saveRoad()">შენახვა</button>
+            <button onclick="clearRoadForm()">გაწმენდა</button>
+            <button onclick="deleteSelectedRoad()" class="delete" id="road-delete-btn" style="display:none;">წაშლა</button>
+        </div>
+        
+        <div class="factory-list" id="road-list">
+            <!-- Road list will be populated here -->
+        </div>
+    </div>
+
+    <!-- Forests Management Panel -->
+    <div id="forests-panel" class="control-panel">
+        <button class="panel-close" onclick="closePanel('forests-panel')">×</button>
+        <h4>🌲 ტყეების მართვა</h4>
+        
+        <div class="factory-form">
+            <input type="text" id="forest-name" placeholder="ტყის დასახელება" />
+            <select id="forest-type">
+                <option value="">ტყის ტიპი</option>
+                <option value="ბუნებრივი ტყე">ბუნებრივი ტყე</option>
+                <option value="რეკრეაციული">რეკრეაციული</option>
+                <option value="საქალაქო პარკი">საქალაქო პარკი</option>
+                <option value="დაცული ტერიტორია">დაცული ტერიტორია</option>
+            </select>
+            <select id="forest-density">
+                <option value="">სიმჭიდროვე</option>
+                <option value="მაღალი">მაღალი</option>
+                <option value="საშუალო">საშუალო</option>
+                <option value="დაბალი">დაბალი</option>
+            </select>
+            <select id="forest-status">
+                <option value="">სტატუსი</option>
+                <option value="დაცული">დაცული</option>
+                <option value="შეუზღუდავი">შეუზღუდავი</option>
+                <option value="რესტორაცია">რესტორაცია</option>
+            </select>
+            <input type="number" id="forest-area" placeholder="ფართობი (ჰა)" step="0.1" />
+            <input type="number" id="forest-centerLat" placeholder="ცენტრის განედი" step="0.000001" />
+            <input type="number" id="forest-centerLng" placeholder="ცენტრის გრძედი" step="0.000001" />
+            
+            <button onclick="saveForest()">შენახვა</button>
+            <button onclick="clearForestForm()">გაწმენდა</button>
+            <button onclick="deleteSelectedForest()" class="delete" id="forest-delete-btn" style="display:none;">წაშლა</button>
+        </div>
+        
+        <div class="factory-list" id="forest-list">
+            <!-- Forest list will be populated here -->
+        </div>
+    </div>
+
     <!-- Routing Panel -->
     <div id="routing-panel" class="control-panel">
         <button class="panel-close" onclick="closePanel('routing-panel')">×</button>
@@ -367,9 +450,13 @@
         let forestsLayer = null;
         let factoriesLayer = null;
 
-        // Factory management variables
+        // Management variables
         let selectedFactoryId = null;
         let factoriesData = [];
+        let selectedRoadId = null;
+        let roadsData = [];
+        let selectedForestId = null;
+        let forestsData = [];
 
         // Routing functions
         function setStartLocation() {
@@ -912,10 +999,346 @@
             }
         });
 
+        // Road Management Functions
+        function loadRoadList() {
+            fetch('/api/geo/roads')
+                .then(response => response.json())
+                .then(data => {
+                    roadsData = data.features;
+                    const roadList = document.getElementById('road-list');
+                    roadList.innerHTML = '';
+                    
+                    data.features.forEach(feature => {
+                        const div = document.createElement('div');
+                        div.className = 'factory-item';
+                        div.setAttribute('data-id', feature.properties.id);
+                        div.innerHTML = `
+                            <strong>${feature.properties.name}</strong><br>
+                            <small>${feature.properties.type} - ${feature.properties.material}</small>
+                        `;
+                        div.onclick = () => selectRoad(feature.properties.id);
+                        roadList.appendChild(div);
+                    });
+                });
+        }
+
+        function selectRoad(roadId) {
+            selectedRoadId = roadId;
+            
+            // Update UI selection
+            document.querySelectorAll('#road-list .factory-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            document.querySelector(`#road-list [data-id="${roadId}"]`).classList.add('selected');
+            
+            // Load road data into form
+            const road = roadsData.find(r => r.properties.id === roadId);
+            if (road) {
+                document.getElementById('road-name').value = road.properties.name;
+                document.getElementById('road-type').value = road.properties.type;
+                document.getElementById('road-material').value = road.properties.material;
+                document.getElementById('road-startLat').value = road.geometry.coordinates[0][1];
+                document.getElementById('road-startLng').value = road.geometry.coordinates[0][0];
+                document.getElementById('road-endLat').value = road.geometry.coordinates[1][1];
+                document.getElementById('road-endLng').value = road.geometry.coordinates[1][0];
+                document.getElementById('road-length').value = road.properties.length;
+                document.getElementById('road-delete-btn').style.display = 'inline-block';
+            }
+        }
+
+        function saveRoad() {
+            const roadData = {
+                name: document.getElementById('road-name').value,
+                type: document.getElementById('road-type').value,
+                material: document.getElementById('road-material').value,
+                startLat: parseFloat(document.getElementById('road-startLat').value),
+                startLng: parseFloat(document.getElementById('road-startLng').value),
+                endLat: parseFloat(document.getElementById('road-endLat').value),
+                endLng: parseFloat(document.getElementById('road-endLng').value),
+                length: parseFloat(document.getElementById('road-length').value)
+            };
+
+            if (!roadData.name || !roadData.type || !roadData.material || 
+                !roadData.startLat || !roadData.startLng || !roadData.endLat || !roadData.endLng) {
+                alert('გთხოვთ შეავსოთ ყველა ველი');
+                return;
+            }
+
+            const url = selectedRoadId ? `/api/geo/roads/${selectedRoadId}` : '/api/geo/roads';
+            const method = selectedRoadId ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(roadData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(selectedRoadId ? 'გზა წარმატებით განახლდა!' : 'გზა წარმატებით დაემატა!');
+                clearRoadForm();
+                loadRoadList();
+                refreshRoadsLayer();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('შეცდომა: გზის შენახვა ვერ მოხერხდა');
+            });
+        }
+
+        function deleteSelectedRoad() {
+            if (!selectedRoadId) {
+                alert('გთხოვთ აირჩიოთ გზა წასაშლელად');
+                return;
+            }
+
+            if (!confirm('დარწმუნებული ხართ რომ გსურთ გზის წაშლა?')) {
+                return;
+            }
+
+            fetch(`/api/geo/roads/${selectedRoadId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('გზა წარმატებით წაიშალა!');
+                    clearRoadForm();
+                    loadRoadList();
+                    refreshRoadsLayer();
+                } else {
+                    alert('შეცდომა: გზის წაშლა ვერ მოხერხდა');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('შეცდომა: გზის წაშლა ვერ მოხერხდა');
+            });
+        }
+
+        function clearRoadForm() {
+            selectedRoadId = null;
+            document.getElementById('road-name').value = '';
+            document.getElementById('road-type').value = '';
+            document.getElementById('road-material').value = '';
+            document.getElementById('road-startLat').value = '';
+            document.getElementById('road-startLng').value = '';
+            document.getElementById('road-endLat').value = '';
+            document.getElementById('road-endLng').value = '';
+            document.getElementById('road-length').value = '';
+            document.getElementById('road-delete-btn').style.display = 'none';
+            
+            document.querySelectorAll('#road-list .factory-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+        }
+
+        function refreshRoadsLayer() {
+            if (roadsLayer) {
+                map.removeLayer(roadsLayer);
+            }
+            
+            fetch('/api/geo/roads')
+                .then(response => response.json())
+                .then(data => {
+                    roadsLayer = L.geoJSON(data, {
+                        style: {
+                            color: '#3388ff',
+                            weight: 4,
+                            opacity: 0.8
+                        },
+                        onEachFeature: function(feature, layer) {
+                            if (feature.properties) {
+                                layer.bindPopup(`
+                                    <strong>${feature.properties.name}</strong><br>
+                                    ტიპი: ${feature.properties.type}<br>
+                                    სიგრძე: ${feature.properties.length} კმ<br>
+                                    მასალა: ${feature.properties.material}
+                                `);
+                            }
+                        }
+                    });
+                    
+                    if (document.getElementById('roads-layer').checked) {
+                        roadsLayer.addTo(map);
+                    }
+                })
+                .catch(error => console.log('Could not refresh roads:', error));
+        }
+
+        // Forest Management Functions
+        function loadForestList() {
+            fetch('/api/geo/forests')
+                .then(response => response.json())
+                .then(data => {
+                    forestsData = data.features;
+                    const forestList = document.getElementById('forest-list');
+                    forestList.innerHTML = '';
+                    
+                    data.features.forEach(feature => {
+                        const div = document.createElement('div');
+                        div.className = 'factory-item';
+                        div.setAttribute('data-id', feature.properties.id);
+                        div.innerHTML = `
+                            <strong>${feature.properties.name}</strong><br>
+                            <small>${feature.properties.type} - ${feature.properties.status}</small>
+                        `;
+                        div.onclick = () => selectForest(feature.properties.id);
+                        forestList.appendChild(div);
+                    });
+                });
+        }
+
+        function selectForest(forestId) {
+            selectedForestId = forestId;
+            
+            // Update UI selection
+            document.querySelectorAll('#forest-list .factory-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            document.querySelector(`#forest-list [data-id="${forestId}"]`).classList.add('selected');
+            
+            // Load forest data into form
+            const forest = forestsData.find(f => f.properties.id === forestId);
+            if (forest) {
+                document.getElementById('forest-name').value = forest.properties.name;
+                document.getElementById('forest-type').value = forest.properties.type;
+                document.getElementById('forest-density').value = forest.properties.density;
+                document.getElementById('forest-status').value = forest.properties.status;
+                document.getElementById('forest-area').value = forest.properties.area;
+                document.getElementById('forest-centerLat').value = forest.geometry.coordinates[1];
+                document.getElementById('forest-centerLng').value = forest.geometry.coordinates[0];
+                document.getElementById('forest-delete-btn').style.display = 'inline-block';
+            }
+        }
+
+        function saveForest() {
+            const forestData = {
+                name: document.getElementById('forest-name').value,
+                type: document.getElementById('forest-type').value,
+                density: document.getElementById('forest-density').value,
+                status: document.getElementById('forest-status').value,
+                area: parseFloat(document.getElementById('forest-area').value),
+                centerLat: parseFloat(document.getElementById('forest-centerLat').value),
+                centerLng: parseFloat(document.getElementById('forest-centerLng').value),
+                coordinates: null
+            };
+
+            if (!forestData.name || !forestData.type || !forestData.density || !forestData.status || 
+                !forestData.area || !forestData.centerLat || !forestData.centerLng) {
+                alert('გთხოვთ შეავსოთ ყველა ველი');
+                return;
+            }
+
+            const url = selectedForestId ? `/api/geo/forests/${selectedForestId}` : '/api/geo/forests';
+            const method = selectedForestId ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(forestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(selectedForestId ? 'ტყე წარმატებით განახლდა!' : 'ტყე წარმატებით დაემატა!');
+                clearForestForm();
+                loadForestList();
+                refreshForestsLayer();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('შეცდომა: ტყის შენახვა ვერ მოხერხდა');
+            });
+        }
+
+        function deleteSelectedForest() {
+            if (!selectedForestId) {
+                alert('გთხოვთ აირჩიოთ ტყე წასაშლელად');
+                return;
+            }
+
+            if (!confirm('დარწმუნებული ხართ რომ გსურთ ტყის წაშლა?')) {
+                return;
+            }
+
+            fetch(`/api/geo/forests/${selectedForestId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('ტყე წარმატებით წაიშალა!');
+                    clearForestForm();
+                    loadForestList();
+                    refreshForestsLayer();
+                } else {
+                    alert('შეცდომა: ტყის წაშლა ვერ მოხერხდა');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('შეცდომა: ტყის წაშლა ვერ მოხერხდა');
+            });
+        }
+
+        function clearForestForm() {
+            selectedForestId = null;
+            document.getElementById('forest-name').value = '';
+            document.getElementById('forest-type').value = '';
+            document.getElementById('forest-density').value = '';
+            document.getElementById('forest-status').value = '';
+            document.getElementById('forest-area').value = '';
+            document.getElementById('forest-centerLat').value = '';
+            document.getElementById('forest-centerLng').value = '';
+            document.getElementById('forest-delete-btn').style.display = 'none';
+            
+            document.querySelectorAll('#forest-list .factory-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+        }
+
+        function refreshForestsLayer() {
+            if (forestsLayer) {
+                map.removeLayer(forestsLayer);
+            }
+            
+            fetch('/api/geo/forests')
+                .then(response => response.json())
+                .then(data => {
+                    forestsLayer = L.geoJSON(data, {
+                        style: {
+                            color: '#228B22',
+                            weight: 2,
+                            opacity: 0.8,
+                            fillColor: '#90EE90',
+                            fillOpacity: 0.4
+                        },
+                        onEachFeature: function(feature, layer) {
+                            if (feature.properties) {
+                                layer.bindPopup(`
+                                    <strong>${feature.properties.name}</strong><br>
+                                    ტიპი: ${feature.properties.type}<br>
+                                    ფართობი: ${feature.properties.area} ჰა<br>
+                                    სიმჭიდროვე: ${feature.properties.density}
+                                `);
+                            }
+                        }
+                    });
+                    
+                    if (document.getElementById('forests-layer').checked) {
+                        forestsLayer.addTo(map);
+                    }
+                })
+                .catch(error => console.log('Could not refresh forests:', error));
+        }
+
         // Load layers when map is ready
         setTimeout(() => {
             loadCustomLayers();
             loadFactoryList();
+            loadRoadList();
+            loadForestList();
             checkGeoServerStatus();
         }, 1000);
 

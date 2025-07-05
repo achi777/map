@@ -1,3 +1,4 @@
+/Users/archilodishelidze/Desktop/dev/map/src/main/java/ge/devspace/simplemap/entity/SimpleForest.java
 /Users/archilodishelidze/Desktop/dev/map/src/main/java/ge/devspace/simplemap/service/GeoServerService.java
 /Users/archilodishelidze/Desktop/dev/map/src/main/java/ge/devspace/simplemap/MapController.java
 /Users/archilodishelidze/Desktop/dev/map/src/main/java/ge/devspace/simplemap/SimpleMapApplication.java
@@ -5,5 +6,6 @@
 /Users/archilodishelidze/Desktop/dev/map/src/main/java/ge/devspace/simplemap/entity/SimpleRoad.java
 /Users/archilodishelidze/Desktop/dev/map/src/main/java/ge/devspace/simplemap/repository/SimpleFactoryRepository.java
 /Users/archilodishelidze/Desktop/dev/map/src/main/java/ge/devspace/simplemap/service/SimpleDataService.java
+/Users/archilodishelidze/Desktop/dev/map/src/main/java/ge/devspace/simplemap/repository/SimpleForestRepository.java
 /Users/archilodishelidze/Desktop/dev/map/src/main/java/ge/devspace/simplemap/entity/SimpleFactory.java
 /Users/archilodishelidze/Desktop/dev/map/src/main/java/ge/devspace/simplemap/repository/SimpleRoadRepository.java

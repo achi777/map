@@ -1,9 +1,11 @@
+ge/devspace/simplemap/repository/SimpleForestRepository.class
 ge/devspace/simplemap/repository/SimpleFactoryRepository.class
 ge/devspace/simplemap/entity/SimpleFactory.class
 ge/devspace/simplemap/MapController.class
 ge/devspace/simplemap/controller/SimpleGeoController.class
 ge/devspace/simplemap/service/SimpleDataService.class
 ge/devspace/simplemap/SimpleMapApplication.class
+ge/devspace/simplemap/entity/SimpleForest.class
 ge/devspace/simplemap/repository/SimpleRoadRepository.class
 ge/devspace/simplemap/entity/SimpleRoad.class
 ge/devspace/simplemap/service/GeoServerService.class
