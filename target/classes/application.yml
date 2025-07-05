@@ -1,25 +1,53 @@
+server:
+  port: 8082
+
 spring:
   application:
-    name: gis-map
+    name: simple-map
   datasource:
-    url: jdbc:postgresql://localhost:5432/gisdb
-    username: gisuser
-    password: gispassword
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password: password
+    driver-class-name: org.h2.Driver
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
+    show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.spatial.dialect.postgis.PostgisPG10Dialect
-        show_sql: false
-    database-platform: org.hibernate.spatial.dialect.postgis.PostgisPG10Dialect
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+  h2:
+    console:
+      enabled: true
 
-server:
-  port: 8081
+logging:
+  level:
+    root: INFO
 
+# GeoServer Configuration
 geoserver:
-  base-url: http://localhost:8080/geoserver
-  workspace: gisproject
+  url: http://localhost:8080/geoserver
   username: admin
   password: admin
+  workspace: simple_map
+
+---
+# Alternative GeoServer profile 1 - admin/admin credentials
+spring:
+  config:
+    activate:
+      on-profile: geoserver-alt1
+geoserver:
+  username: admin
+  password: admin
+
+---
+# Alternative GeoServer profile 2 - admin/password credentials  
+spring:
+  config:
+    activate:
+      on-profile: geoserver-alt2
+geoserver:
+  username: admin
+  password: password

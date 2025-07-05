@@ -12,13 +12,13 @@
     </parent>
 
     <groupId>ge.devspace</groupId>
-    <artifactId>gis-map</artifactId>
+    <artifactId>simple-map</artifactId>
     <version>1.0.0</version>
-    <name>GIS Map Application</name>
-    <description>Interactive GIS Map using GeoServer + PostGIS + Leaflet</description>
+    <name>Simple Map Application</name>
 
     <properties>
         <java.version>17</java.version>
+        <start-class>ge.devspace.simplemap.SimpleMapApplication</start-class>
     </properties>
 
     <dependencies>
@@ -28,26 +28,24 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
-            <groupId>org.hibernate</groupId>
-            <artifactId>hibernate-spatial</artifactId>
-            <version>6.2.5.Final</version>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
         </dependency>
     </dependencies>
 

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <title th:text="${title}">Interactive GIS Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        .info-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            max-width: 300px;
+        }
+        .layer-controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 200px;
+        }
+        .layer-control {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+        .layer-control input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        .layer-control label {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .layer-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            margin-right: 8px;
+            border: 1px solid #ccc;
+        }
+        .factory-panel {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .factory-form {
+            margin-top: 10px;
+        }
+        .factory-form input, .factory-form select {
+            width: 100%;
+            margin: 5px 0;
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .factory-form button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px 5px 5px 0;
+        }
+        .factory-form button:hover {
+            background: #0056b3;
+        }
+        .factory-form button.delete {
+            background: #dc3545;
+        }
+        .factory-form button.delete:hover {
+            background: #c82333;
+        }
+        .factory-list {
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 10px;
+        }
+        .factory-item {
+            padding: 8px;
+            border: 1px solid #eee;
+            margin: 5px 0;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .factory-item:hover {
+            background: #f8f9fa;
+        }
+        .factory-item.selected {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+        .routing-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 350px;
+            max-width: 400px;
+        }
+        .routing-controls {
+            margin-bottom: 10px;
+        }
+        .routing-controls input {
+            width: 100%;
+            margin: 5px 0;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .routing-controls button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px 5px 5px 0;
+        }
+        .routing-controls button:hover {
+            background: #218838;
+        }
+        .routing-controls button.secondary {
+            background: #6c757d;
+        }
+        .routing-controls button.secondary:hover {
+            background: #5a6268;
+        }
+        .transport-modes {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        .transport-mode {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+        }
+        .transport-mode input[type="radio"] {
+            margin-right: 5px;
+        }
+        .route-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .hidden {
+            display: none;
+        }
+        .swap-button {
+            background: #17a2b8;
+            font-size: 14px;
+            padding: 6px 12px;
+        }
+        .swap-button:hover {
+            background: #138496;
+        }
+    </style>
+</head>
+<body>
+    <!-- Info Panel -->
+    <div class="info-panel">
+        <h3>ინტერაქტიული GIS რუქა</h3>
+        <p>საქართველოს რუქა ქარხნების, გზების და ტყეების ვიზუალიზაციისთვის</p>
+        <small>OpenStreetMap დაფუძნებულ ნავიგაციასთან ერთად</small>
+    </div>
+
+    <!-- Layer Controls -->
+    <div class="layer-controls">
+        <h4>შრეების კონტროლი</h4>
+        <div id="layer-toggles">
+            <!-- Layer controls will be dynamically added here -->
+        </div>
+    </div>
+
+    <!-- Factory Management Panel -->
+    <div class="factory-panel">
+        <h4>ქარხნების მართვა</h4>
+        <div class="factory-list" id="factory-list">
+            <!-- Factory list will be dynamically populated -->
+        </div>
+        
+        <div class="factory-form">
+            <input type="text" id="factory-name" placeholder="ქარხნის სახელი" />
+            <select id="factory-industry">
+                <option value="">ინდუსტრიის ტიპი</option>
+                <option value="Food & Beverage">საკვები და სასმელები</option>
+                <option value="Heavy Industry">მძიმე ინდუსტრია</option>
+                <option value="Textile">ტექსტილი</option>
+                <option value="Automotive">ავტომობილური</option>
+                <option value="Pharmaceutical">ფარმაცევტული</option>
+                <option value="Electronics">ელექტრონიკა</option>
+            </select>
+            <input type="number" id="factory-capacity" placeholder="შესაძლებლობა" />
+            <input type="number" id="factory-year" placeholder="დაარსების წელი" />
+            <select id="factory-status">
+                <option value="Active">აქტიური</option>
+                <option value="Closed">დახურული</option>
+                <option value="Under Construction">მშენებარე</option>
+            </select>
+            
+            <button onclick="enableCoordinatePicking()">კოორდინატების არჩევა</button>
+            <button onclick="saveFactory()">შენახვა</button>
+            <button onclick="deleteFactory()" class="delete">წაშლა</button>
+            <button onclick="clearFactoryForm()" class="secondary">გაწმენდა</button>
+        </div>
+    </div>
+
+    <!-- Routing Panel -->
+    <div class="routing-panel">
+        <h4>🗺️ მარშრუტის დაგეგმვა</h4>
+        
+        <div class="routing-controls">
+            <input type="text" id="start-location" placeholder="საწყისი წერტილი" readonly />
+            <button onclick="setStartLocation()">საწყისი წერტილი</button>
+            <button onclick="swapLocations()" class="swap-button">↕️ შეცვლა</button>
+            
+            <input type="text" id="end-location" placeholder="დანიშნულების წერტილი" readonly />
+            <button onclick="setEndLocation()">დანიშნულება</button>
+            
+            <div class="transport-modes">
+                <div class="transport-mode">
+                    <input type="radio" id="driving" name="route-type" value="driving" checked />
+                    <label for="driving">🚗 მანქანა</label>
+                </div>
+                <div class="transport-mode">
+                    <input type="radio" id="walking" name="route-type" value="walking" />
+                    <label for="walking">🚶 ფეხით</label>
+                </div>
+                <div class="transport-mode">
+                    <input type="radio" id="cycling" name="route-type" value="cycling" />
+                    <label for="cycling">🚴 ველოსიპედით</label>
+                </div>
+            </div>
+            
+            <button onclick="calculateRoute()">მარშრუტის ძებნა</button>
+            <button onclick="clearRoute()" class="secondary">გაწმენდა</button>
+        </div>
+        
+        <div id="route-info" class="route-info hidden">
+            <!-- Route information will be displayed here -->
+        </div>
+    </div>
+    
+    <div id="map"></div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/js/map.js"></script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8">
-    <title th:text="${title}">Interactive GIS Map</title>
+    <title th:text="${title}">Simple Interactive Map</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -20,58 +20,114 @@
             top: 10px;
             right: 10px;
             background: white;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 1000;
             max-width: 300px;
         }
-        .layer-controls {
+        .routing-panel {
+            position: absolute;
+            bottom: 10px;
+            left: 230px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            min-width: 350px;
+            max-width: 400px;
+        }
+        .routing-controls input {
+            width: 100%;
+            margin: 5px 0;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+        .routing-controls button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px 5px 5px 0;
+        }
+        .routing-controls button:hover {
+            background: #218838;
+        }
+        .routing-controls button.secondary {
+            background: #6c757d;
+        }
+        .routing-controls button.secondary:hover {
+            background: #5a6268;
+        }
+        .transport-modes {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+        .transport-mode {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+        }
+        .transport-mode input[type="radio"] {
+            margin-right: 5px;
+        }
+        .route-info {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .hidden {
+            display: none;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .layers-panel {
             position: absolute;
             top: 10px;
             left: 10px;
             background: white;
             padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 1000;
             min-width: 200px;
         }
         .layer-control {
-            margin: 5px 0;
             display: flex;
             align-items: center;
+            margin: 5px 0;
         }
         .layer-control input[type="checkbox"] {
             margin-right: 8px;
         }
         .layer-control label {
+            font-size: 14px;
             cursor: pointer;
-            display: flex;
-            align-items: center;
         }
-        .layer-color {
-            width: 20px;
-            height: 20px;
-            border-radius: 3px;
-            margin-right: 8px;
-            border: 1px solid #ccc;
-        }
-        .factory-panel {
+        .factory-management {
             position: absolute;
-            bottom: 10px;
-            right: 10px;
+            top: 200px;
+            left: 10px;
             background: white;
             padding: 15px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             z-index: 1000;
-            min-width: 300px;
+            min-width: 250px;
             max-height: 400px;
             overflow-y: auto;
         }
         .factory-form {
-            margin-top: 10px;
+            margin-bottom: 15px;
         }
         .factory-form input, .factory-form select {
             width: 100%;
@@ -79,15 +135,17 @@
             padding: 5px;
             border: 1px solid #ddd;
             border-radius: 3px;
+            font-size: 12px;
         }
         .factory-form button {
             background: #007bff;
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 8px 12px;
             border-radius: 3px;
             cursor: pointer;
-            margin: 5px 5px 5px 0;
+            margin: 2px;
+            font-size: 12px;
         }
         .factory-form button:hover {
             background: #0056b3;
@@ -101,84 +159,120 @@
         .factory-list {
             max-height: 200px;
             overflow-y: auto;
-            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            padding: 5px;
         }
         .factory-item {
-            padding: 8px;
-            border: 1px solid #eee;
-            margin: 5px 0;
-            border-radius: 3px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
             cursor: pointer;
+            font-size: 12px;
         }
         .factory-item:hover {
             background: #f8f9fa;
         }
         .factory-item.selected {
             background: #e3f2fd;
-            border-color: #2196f3;
-        }
-        .hidden {
-            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="layer-controls">
-        <h4>Map Layers</h4>
-        <div id="layer-toggles">
-            <!-- Layer controls will be populated here -->
+    <!-- Layers Panel -->
+    <div class="layers-panel">
+        <h4>📍 Layer-ები</h4>
+        <div class="layer-control">
+            <input type="checkbox" id="roads-layer" checked onchange="toggleLayer('roads')">
+            <label for="roads-layer">🛣️ გზები</label>
+        </div>
+        <div class="layer-control">
+            <input type="checkbox" id="forests-layer" checked onchange="toggleLayer('forests')">
+            <label for="forests-layer">🌲 ტყეები</label>
+        </div>
+        <div class="layer-control">
+            <input type="checkbox" id="factories-layer" checked onchange="toggleLayer('factories')">
+            <label for="factories-layer">🏭 ქარხნები</label>
         </div>
     </div>
-    <div class="info-panel">
-        <h4>Georgia GIS Map</h4>
-        <p><strong>Republic of Georgia</strong></p>
-        <p>Click on the map to get feature information</p>
-        <p><small>Map bounds restricted to Georgia territory</small></p>
-    </div>
-    
-    <div class="factory-panel">
-        <h4>Factory Management</h4>
-        <button onclick="toggleFactoryForm()" id="toggle-form-btn">Add New Factory</button>
+
+    <!-- Factory Management Panel -->
+    <div class="factory-management">
+        <h4>🏭 ქარხნების მართვა</h4>
+        <div id="geoserver-status" style="font-size: 12px; margin-bottom: 10px; padding: 5px; border-radius: 3px;">
+            <span id="geoserver-indicator">🔄 GeoServer-ის სტატუსის შემოწმება...</span>
+        </div>
         
-        <div id="factory-form" class="factory-form hidden">
-            <h5 id="form-title">Add New Factory</h5>
-            <input type="text" id="factory-name" placeholder="Factory Name" required>
-            <select id="factory-industry" required>
-                <option value="">Select Industry Type</option>
-                <option value="Food & Beverage">Food & Beverage</option>
-                <option value="Heavy Industry">Heavy Industry</option>
-                <option value="Textile">Textile</option>
-                <option value="Automotive">Automotive</option>
-                <option value="Pharmaceutical">Pharmaceutical</option>
-                <option value="Electronics">Electronics</option>
-                <option value="Chemical">Chemical</option>
-                <option value="Other">Other</option>
+        <div class="factory-form">
+            <input type="text" id="factory-name" placeholder="ქარხნის დასახელება" />
+            <select id="factory-type">
+                <option value="">ქარხნის ტიპი</option>
+                <option value="ტექსტილი">ტექსტილი</option>
+                <option value="საკვები">საკვები</option>
+                <option value="ქიმია">ქიმია</option>
+                <option value="ელექტრონიკა">ელექტრონიკა</option>
+                <option value="ლითონი">ლითონი</option>
+                <option value="სხვა">სხვა</option>
             </select>
-            <input type="number" id="factory-capacity" placeholder="Capacity" min="1">
-            <input type="number" id="factory-year" placeholder="Established Year" min="1800" max="2024">
-            <select id="factory-status" required>
-                <option value="">Select Status</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Closed">Closed</option>
-                <option value="Under Construction">Under Construction</option>
+            <select id="factory-status">
+                <option value="">სტატუსი</option>
+                <option value="აქტიური">აქტიური</option>
+                <option value="შეჩერებული">შეჩერებული</option>
+                <option value="დახურული">დახურული</option>
             </select>
-            <input type="number" id="factory-longitude" placeholder="Longitude" step="0.000001" required>
-            <input type="number" id="factory-latitude" placeholder="Latitude" step="0.000001" required>
-            <small>Click on the map to set coordinates automatically</small>
+            <input type="number" id="factory-capacity" placeholder="მოცულობა" />
+            <input type="number" id="factory-lat" placeholder="განედი (latitude)" step="0.000001" />
+            <input type="number" id="factory-lng" placeholder="გრძედი (longitude)" step="0.000001" />
             
-            <div>
-                <button onclick="saveFactory()" id="save-btn">Save Factory</button>
-                <button onclick="cancelForm()">Cancel</button>
-                <button onclick="deleteFactory()" id="delete-btn" class="delete hidden">Delete</button>
-            </div>
+            <button onclick="saveFactory()">შენახვა</button>
+            <button onclick="clearForm()">გაწმენდა</button>
+            <button onclick="deleteSelectedFactory()" class="delete" id="delete-btn" style="display:none;">წაშლა</button>
         </div>
         
         <div class="factory-list" id="factory-list">
-            <h5>Existing Factories</h5>
-            <div id="factories-container">
-                <!-- Factory items will be populated here -->
+            <!-- Factory list will be populated here -->
+        </div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="info-panel">
+        <h3>🗺️ Simple Interactive Map</h3>
+        <p>საქართველოს ინტერაქტიული რუქა</p>
+        <p class="success">✅ Map is working!</p>
+        <small>OpenStreetMap-ის სტილის ნავიგაციით</small>
+    </div>
+
+    <!-- Routing Panel -->
+    <div class="routing-panel">
+        <h4>🚗 მარშრუტის დაგეგმვა</h4>
+        
+        <div class="routing-controls">
+            <input type="text" id="start-location" placeholder="საწყისი წერტილი (კლიკით)" readonly />
+            <button onclick="setStartLocation()">საწყისი წერტილი</button>
+            
+            <input type="text" id="end-location" placeholder="დანიშნულების წერტილი (კლიკით)" readonly />
+            <button onclick="setEndLocation()">დანიშნულება</button>
+            
+            <div class="transport-modes">
+                <div class="transport-mode">
+                    <input type="radio" id="driving" name="route-type" value="driving" checked />
+                    <label for="driving">🚗 მანქანა</label>
+                </div>
+                <div class="transport-mode">
+                    <input type="radio" id="walking" name="route-type" value="walking" />
+                    <label for="walking">🚶 ფეხით</label>
+                </div>
+                <div class="transport-mode">
+                    <input type="radio" id="cycling" name="route-type" value="cycling" />
+                    <label for="cycling">🚴 ველოსიპედით</label>
+                </div>
             </div>
+            
+            <button onclick="calculateRoute()">მარშრუტის ძებნა</button>
+            <button onclick="clearRoute()" class="secondary">გაწმენდა</button>
+        </div>
+        
+        <div id="route-info" class="route-info hidden">
+            <!-- Route information will be displayed here -->
         </div>
     </div>
     
@@ -186,501 +280,540 @@
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // Republic of Georgia coordinates - centered on Tbilisi
-        const georgiaCenter = [41.7151, 44.8271];
-        const georgiaZoom = 7;
-        
-        // Georgia boundaries (approximate)
-        const georgiaBounds = [
-            [39.5, 39.5],  // Southwest corner
-            [43.5, 46.5]   // Northeast corner
-        ];
-        
-        const map = L.map('map', {
-            center: georgiaCenter,
-            zoom: georgiaZoom,
-            maxBounds: georgiaBounds,
-            maxBoundsViscosity: 1.0
-        });
-        
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // Initialize map centered on Tbilisi, Georgia
+        const map = L.map('map').setView([41.7151, 44.8271], 13);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
 
-        // Add Georgia country boundary for reference
-        const georgiaBoundary = [
-            [41.064, 40.095], [41.023, 40.321], [40.839, 40.204], [40.315, 40.065],
-            [39.955, 40.120], [39.688, 40.375], [39.877, 40.734], [40.246, 40.921],
-            [40.321, 41.447], [40.706, 41.736], [41.151, 41.736], [41.736, 42.614],
-            [42.386, 42.614], [42.614, 42.174], [43.451, 42.174], [43.582, 41.736],
-            [43.743, 41.151], [43.451, 40.839], [43.321, 40.580], [42.878, 40.321],
-            [42.614, 40.204], [42.174, 40.065], [41.736, 40.120], [41.447, 40.246],
-            [41.238, 40.375], [41.064, 40.095]
-        ];
+        // Add marker for Tbilisi
+        L.marker([41.7151, 44.8271]).addTo(map)
+            .bindPopup('<b>თბილისი</b><br>საქართველოს დედაქალაქი')
+            .openPopup();
 
-        L.polygon(georgiaBoundary, {
-            color: '#333',
-            weight: 2,
-            opacity: 0.8,
-            fillColor: 'transparent',
-            fillOpacity: 0
-        }).addTo(map);
+        // Routing variables
+        let routingMode = null;
+        let startLocation = null;
+        let endLocation = null;
+        let currentRoute = null;
+        let startMarker = null;
+        let endMarker = null;
 
-        let config = {};
-        let layers = {};
-        let wmsLayers = {};
+        // Layer variables
+        let roadsLayer = null;
+        let forestsLayer = null;
+        let factoriesLayer = null;
 
-        // Load configuration and layers
-        Promise.all([
-            fetch('/api/geo/config').then(r => r.json()),
-            fetch('/api/geo/layers/available').then(r => r.json())
-        ]).then(([configData, layersData]) => {
-            config = configData;
-            
-            // Create layer controls
-            const layerToggles = document.getElementById('layer-toggles');
-            
-            layersData.forEach(layer => {
-                // Create layer control
-                const layerControl = document.createElement('div');
-                layerControl.className = 'layer-control';
-                
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.id = layer.name;
-                checkbox.checked = true;
-                
-                const label = document.createElement('label');
-                label.htmlFor = layer.name;
-                
-                const colorDiv = document.createElement('div');
-                colorDiv.className = 'layer-color';
-                colorDiv.style.backgroundColor = layer.color;
-                
-                const labelText = document.createTextNode(layer.displayName);
-                
-                label.appendChild(colorDiv);
-                label.appendChild(labelText);
-                
-                layerControl.appendChild(checkbox);
-                layerControl.appendChild(label);
-                layerToggles.appendChild(layerControl);
-                
-                // Load GeoJSON data and create layer
-                loadGeoJSONLayer(layer);
-                
-                // Add toggle functionality
-                checkbox.addEventListener('change', function() {
-                    if (this.checked && layers[layer.name]) {
-                        layers[layer.name].addTo(map);
-                    } else if (layers[layer.name]) {
-                        // Remove click handler if it's a WMS layer
-                        if (layers[layer.name]._clickHandler) {
-                            map.off('click', layers[layer.name]._clickHandler);
-                        }
-                        map.removeLayer(layers[layer.name]);
-                    }
-                });
-            });
-        })
-        .catch(err => console.log('Error loading configuration:', err));
+        // Factory management variables
+        let selectedFactoryId = null;
+        let factoriesData = [];
 
-        function loadGeoJSONLayer(layerConfig) {
-            // Try WMS first, fallback to GeoJSON
-            if (layerConfig.wmsUrl) {
-                loadWMSLayer(layerConfig);
-            } else {
-                loadDirectGeoJSONLayer(layerConfig);
+        // Routing functions
+        function setStartLocation() {
+            routingMode = 'start';
+            map.getContainer().style.cursor = 'crosshair';
+            alert('კლიკი ნახეთ რუქაზე საწყისი წერტილის ასარჩევად');
+        }
+
+        function setEndLocation() {
+            routingMode = 'end';
+            map.getContainer().style.cursor = 'crosshair';
+            alert('კლიკი ნახეთ რუქაზე დანიშნულების წერტილის ასარჩევად');
+        }
+
+        function calculateRoute() {
+            if (!startLocation || !endLocation) {
+                alert('გთხოვთ აირჩიოთ საწყისი და საბოლოო წერტილები');
+                return;
             }
-        }
-
-        function loadWMSLayer(layerConfig) {
-            try {
-                const wmsLayer = L.tileLayer.wms(layerConfig.wmsUrl, {
-                    layers: `gisproject:${layerConfig.name}`,
-                    format: 'image/png',
-                    transparent: true,
-                    version: '1.1.0',
-                    crs: L.CRS.EPSG4326,
-                    attribution: 'GeoServer WMS'
-                });
-
-                // Add click event for GetFeatureInfo - store reference to avoid duplicate listeners
-                const clickHandler = function(e) {
-                    if (layers[layerConfig.name] && map.hasLayer(layers[layerConfig.name])) {
-                        getFeatureInfo(layerConfig, e.latlng, e.containerPoint);
-                    }
-                };
-                
-                // Store click handler reference for this layer
-                wmsLayer._clickHandler = clickHandler;
-                map.on('click', clickHandler);
-
-                // Store layer and add to map
-                layers[layerConfig.name] = wmsLayer;
-                wmsLayer.addTo(map);
-                
-                console.log(`✅ Loaded WMS layer: ${layerConfig.name}`);
-            } catch (error) {
-                console.log(`⚠️ WMS failed for ${layerConfig.name}, falling back to GeoJSON`);
-                loadDirectGeoJSONLayer(layerConfig);
-            }
-        }
-
-        function getFeatureInfo(layerConfig, latlng, point) {
-            const bbox = map.getBounds();
-            const size = map.getSize();
             
-            const wmsUrl = layerConfig.wmsUrl + 
-                '?SERVICE=WMS' +
-                '&VERSION=1.1.0' +
-                '&REQUEST=GetFeatureInfo' +
-                '&LAYERS=gisproject:' + layerConfig.name +
-                '&QUERY_LAYERS=gisproject:' + layerConfig.name +
-                '&INFO_FORMAT=application/json' +
-                '&FEATURE_COUNT=50' +
-                '&X=' + Math.round(point.x) +
-                '&Y=' + Math.round(point.y) +
-                '&SRS=EPSG:4326' +
-                '&BBOX=' + bbox.toBBoxString() +
-                '&WIDTH=' + size.x +
-                '&HEIGHT=' + size.y;
-
-            fetch(wmsUrl)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.features && data.features.length > 0) {
-                        const feature = data.features[0];
-                        let html = '<h4>' + layerConfig.displayName + ' ინფორმაცია</h4>';
-                        
-                        if (layerConfig.name === 'factories') {
-                            html += '<strong>სახელი:</strong> ' + (feature.properties.name || 'N/A') + '<br>';
-                            html += '<strong>ინდუსტრია:</strong> ' + (feature.properties.industry_type || 'N/A') + '<br>';
-                            html += '<strong>შესაძლებლობა:</strong> ' + (feature.properties.capacity || 'N/A') + '<br>';
-                            html += '<strong>დაარსების წელი:</strong> ' + (feature.properties.established_year || 'N/A') + '<br>';
-                            html += '<strong>სტატუსი:</strong> ' + (feature.properties.status || 'N/A') + '<br>';
-                        } else {
-                            for (let key in feature.properties) {
-                                if (key !== 'id' && feature.properties[key] !== null) {
-                                    html += '<strong>' + key + ':</strong> ' + feature.properties[key] + '<br>';
-                                }
-                            }
-                        }
-                        
-                        L.popup()
-                            .setLatLng(latlng)
-                            .setContent(html)
-                            .openOn(map);
-                    }
-                })
-                .catch(err => {
-                    console.log('GetFeatureInfo error:', err);
-                    // Fallback to direct API call
-                    if (layerConfig.name === 'factories') {
-                        getFactoryInfoFallback(latlng);
-                    }
-                });
-        }
-
-        function getFactoryInfoFallback(latlng) {
-            // Get all factories and find the closest one
-            fetch('/api/geo/factories')
-                .then(response => response.json())
-                .then(factories => {
-                    let closestFactory = null;
-                    let minDistance = Infinity;
-                    
-                    factories.forEach(factory => {
-                        const factoryLatLng = L.latLng(factory.latitude, factory.longitude);
-                        const distance = latlng.distanceTo(factoryLatLng);
-                        
-                        if (distance < minDistance && distance < 1000) { // Within 1km
-                            minDistance = distance;
-                            closestFactory = factory;
-                        }
-                    });
-                    
-                    if (closestFactory) {
-                        let html = '<h4>Factory ინფორმაცია</h4>';
-                        html += '<strong>სახელი:</strong> ' + closestFactory.name + '<br>';
-                        html += '<strong>ინდუსტრია:</strong> ' + closestFactory.industryType + '<br>';
-                        html += '<strong>შესაძლებლობა:</strong> ' + closestFactory.capacity + '<br>';
-                        html += '<strong>დაარსების წელი:</strong> ' + closestFactory.establishedYear + '<br>';
-                        html += '<strong>სტატუსი:</strong> ' + closestFactory.status + '<br>';
-                        
-                        L.popup()
-                            .setLatLng(latlng)
-                            .setContent(html)
-                            .openOn(map);
-                    }
-                })
-                .catch(err => console.log('Factory fallback error:', err));
-        }
-
-        function loadDirectGeoJSONLayer(layerConfig) {
-            const url = `/api/geo/${layerConfig.name}/geojson`;
+            // Clear previous route
+            if (currentRoute) {
+                map.removeLayer(currentRoute);
+            }
+            
+            // Get selected transport mode
+            const routeType = document.querySelector('input[name="route-type"]:checked').value;
+            
+            // Try OSRM routing service
+            const start = `${startLocation.lng},${startLocation.lat}`;
+            const end = `${endLocation.lng},${endLocation.lat}`;
+            
+            const profileMap = {
+                'driving': 'driving',
+                'walking': 'foot',
+                'cycling': 'bike'
+            };
+            
+            const profile = profileMap[routeType] || 'driving';
+            const url = `https://router.project-osrm.org/route/v1/${profile}/${start};${end}?geometries=geojson&overview=full`;
             
             fetch(url)
                 .then(response => response.json())
                 .then(data => {
-                    let style = {};
-                    let pointToLayer = null;
+                    if (data.routes && data.routes.length > 0) {
+                        drawRoute(data.routes[0], routeType);
+                    } else {
+                        drawSimpleRoute();
+                    }
+                })
+                .catch(() => {
+                    console.log('OSRM failed, drawing simple line');
+                    drawSimpleRoute();
+                });
+        }
+
+        function drawRoute(route, routeType) {
+            const coordinates = route.geometry.coordinates.map(coord => [coord[1], coord[0]]);
+            
+            const colorMap = {
+                'driving': '#007bff',
+                'walking': '#28a745', 
+                'cycling': '#ffc107'
+            };
+            
+            currentRoute = L.polyline(coordinates, {
+                color: colorMap[routeType] || '#007bff',
+                weight: 6,
+                opacity: 0.8
+            }).addTo(map);
+            
+            const distance = (route.distance / 1000).toFixed(2);
+            const duration = Math.round(route.duration / 60);
+            
+            const transportNames = {
+                'driving': 'მანქანა',
+                'walking': 'ფეხით',
+                'cycling': 'ველოსიპედით'
+            };
+            
+            const routeInfo = document.getElementById('route-info');
+            routeInfo.innerHTML = `
+                <strong>მარშრუტის ინფორმაცია:</strong><br>
+                <strong>მანძილი:</strong> ${distance} კმ<br>
+                <strong>დრო:</strong> ${duration} წუთი<br>
+                <strong>ტრანსპორტი:</strong> ${transportNames[routeType]}<br>
+                <small>რეალური მარშრუტი OpenStreetMap-ის მიხედვით</small>
+            `;
+            routeInfo.classList.remove('hidden');
+            
+            // Fit map to show the route
+            const group = new L.featureGroup([startMarker, endMarker, currentRoute]);
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+
+        function drawSimpleRoute() {
+            const latlngs = [startLocation, endLocation];
+            
+            currentRoute = L.polyline(latlngs, {
+                color: '#ff6b35',
+                weight: 6,
+                opacity: 0.8,
+                dashArray: '10, 10'
+            }).addTo(map);
+            
+            const distance = (startLocation.distanceTo(endLocation) / 1000).toFixed(2);
+            
+            const routeInfo = document.getElementById('route-info');
+            routeInfo.innerHTML = `
+                <strong>მარშრუტის ინფორმაცია:</strong><br>
+                <strong>მანძილი:</strong> ~${distance} კმ (პირდაპირი ხაზი)<br>
+                <strong>ტიპი:</strong> გამარტივებული მარშრუტი<br>
+                <small>ნაჩვენებია პირდაპირი ხაზი ორ წერტილს შორის</small>
+            `;
+            routeInfo.classList.remove('hidden');
+            
+            // Fit map to show the route
+            const group = new L.featureGroup([startMarker, endMarker, currentRoute]);
+            map.fitBounds(group.getBounds().pad(0.1));
+        }
+
+        function clearRoute() {
+            if (currentRoute) {
+                map.removeLayer(currentRoute);
+                currentRoute = null;
+            }
+            
+            if (startMarker) {
+                map.removeLayer(startMarker);
+                startMarker = null;
+                startLocation = null;
+            }
+            
+            if (endMarker) {
+                map.removeLayer(endMarker);
+                endMarker = null;
+                endLocation = null;
+            }
+            
+            routingMode = null;
+            document.getElementById('start-location').value = '';
+            document.getElementById('end-location').value = '';
+            document.getElementById('route-info').classList.add('hidden');
+            
+            map.getContainer().style.cursor = '';
+        }
+
+        // Map click handler
+        map.on('click', function(e) {
+            if (routingMode) {
+                const latlng = e.latlng;
+                
+                if (routingMode === 'start') {
+                    startLocation = latlng;
                     
-                    // Set style based on layer type
-                    if (layerConfig.name === 'forests') {
-                        style = {
-                            fillColor: '#228B22',
-                            fillOpacity: 0.6,
-                            color: '#006400',
-                            weight: 2
-                        };
-                    } else if (layerConfig.name === 'roads') {
-                        style = {
-                            color: '#FF6347',
-                            weight: 5,
-                            opacity: 0.8
-                        };
-                    } else if (layerConfig.name === 'factories') {
-                        style = {
-                            color: '#4169E1',
-                            fillColor: '#4169E1',
-                            fillOpacity: 0.8
-                        };
-                        pointToLayer = function(feature, latlng) {
-                            return L.circleMarker(latlng, {
-                                radius: 12,
-                                color: '#4169E1',
-                                fillColor: '#4169E1',
-                                fillOpacity: 0.8,
-                                weight: 3
-                            });
-                        };
+                    if (startMarker) {
+                        map.removeLayer(startMarker);
                     }
                     
-                    // Create Leaflet layer
-                    const layer = L.geoJSON(data, {
-                        style: style,
-                        pointToLayer: pointToLayer,
+                    startMarker = L.marker(latlng, {
+                        icon: L.divIcon({
+                            className: 'start-marker',
+                            html: '<div style="background: #28a745; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">A</div>'
+                        })
+                    }).addTo(map);
+                    
+                    document.getElementById('start-location').value = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+                    
+                } else if (routingMode === 'end') {
+                    endLocation = latlng;
+                    
+                    if (endMarker) {
+                        map.removeLayer(endMarker);
+                    }
+                    
+                    endMarker = L.marker(latlng, {
+                        icon: L.divIcon({
+                            className: 'end-marker',
+                            html: '<div style="background: #dc3545; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">B</div>'
+                        })
+                    }).addTo(map);
+                    
+                    document.getElementById('end-location').value = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+                }
+                
+                routingMode = null;
+                map.getContainer().style.cursor = '';
+            }
+        });
+
+        // Load custom layers
+        function loadCustomLayers() {
+            // Load roads
+            fetch('/api/geo/roads')
+                .then(response => response.json())
+                .then(data => {
+                    roadsLayer = L.geoJSON(data, {
+                        style: {
+                            color: '#3388ff',
+                            weight: 4,
+                            opacity: 0.8
+                        },
                         onEachFeature: function(feature, layer) {
-                            // Add popup with feature information
-                            let html = '<h4>' + layerConfig.displayName + ' ინფორმაცია</h4>';
-                            
-                            if (layerConfig.name === 'factories') {
-                                html += '<strong>სახელი:</strong> ' + (feature.properties.name || 'N/A') + '<br>';
-                                html += '<strong>ინდუსტრია:</strong> ' + (feature.properties.industryType || 'N/A') + '<br>';
-                                html += '<strong>შესაძლებლობა:</strong> ' + (feature.properties.capacity || 'N/A') + '<br>';
-                                html += '<strong>დაარსების წელი:</strong> ' + (feature.properties.establishedYear || 'N/A') + '<br>';
-                                html += '<strong>სტატუსი:</strong> ' + (feature.properties.status || 'N/A') + '<br>';
-                            } else if (layerConfig.name === 'roads') {
-                                html += '<strong>სახელი:</strong> ' + (feature.properties.name || 'N/A') + '<br>';
-                                html += '<strong>გზის ტიპი:</strong> ' + (feature.properties.roadType || 'N/A') + '<br>';
-                                html += '<strong>სიგრძე (კმ):</strong> ' + (feature.properties.lengthKm || 'N/A') + '<br>';
-                                html += '<strong>ზედაპირი:</strong> ' + (feature.properties.surfaceType || 'N/A') + '<br>';
-                                html += '<strong>მაქს. სიჩქარე:</strong> ' + (feature.properties.maxSpeed || 'N/A') + ' კმ/სთ<br>';
-                            } else if (layerConfig.name === 'forests') {
-                                html += '<strong>სახელი:</strong> ' + (feature.properties.name || 'N/A') + '<br>';
-                                html += '<strong>ტყის ტიპი:</strong> ' + (feature.properties.forestType || 'N/A') + '<br>';
-                                html += '<strong>ფართობი (ჰა):</strong> ' + (feature.properties.areaHectares || 'N/A') + '<br>';
-                                html += '<strong>დაცვის სტატუსი:</strong> ' + (feature.properties.protectionStatus || 'N/A') + '<br>';
-                            } else {
-                                for (let key in feature.properties) {
-                                    if (key !== 'id' && feature.properties[key] !== null) {
-                                        html += '<strong>' + key + ':</strong> ' + feature.properties[key] + '<br>';
-                                    }
-                                }
+                            if (feature.properties) {
+                                layer.bindPopup(`
+                                    <strong>${feature.properties.name}</strong><br>
+                                    ტიპი: ${feature.properties.type}<br>
+                                    სიგრძე: ${feature.properties.length} კმ<br>
+                                    მასალა: ${feature.properties.material}
+                                `);
                             }
-                            
-                            layer.bindPopup(html);
                         }
-                    });
-                    
-                    // Store layer and add to map
-                    layers[layerConfig.name] = layer;
-                    layer.addTo(map);
-                    
-                    console.log(`✅ Loaded GeoJSON layer: ${layerConfig.name}`);
+                    }).addTo(map);
                 })
-                .catch(err => console.log('Error loading layer:', layerConfig.name, err));
+                .catch(error => console.log('Could not load roads:', error));
+
+            // Load forests
+            fetch('/api/geo/forests')
+                .then(response => response.json())
+                .then(data => {
+                    forestsLayer = L.geoJSON(data, {
+                        style: {
+                            color: '#228B22',
+                            weight: 2,
+                            opacity: 0.8,
+                            fillColor: '#90EE90',
+                            fillOpacity: 0.4
+                        },
+                        onEachFeature: function(feature, layer) {
+                            if (feature.properties) {
+                                layer.bindPopup(`
+                                    <strong>${feature.properties.name}</strong><br>
+                                    ტიპი: ${feature.properties.type}<br>
+                                    ფართობი: ${feature.properties.area} ჰა<br>
+                                    სიმჭიდროვე: ${feature.properties.density}
+                                `);
+                            }
+                        }
+                    }).addTo(map);
+                })
+                .catch(error => console.log('Could not load forests:', error));
+
+            // Load factories
+            fetch('/api/geo/factories')
+                .then(response => response.json())
+                .then(data => {
+                    factoriesLayer = L.geoJSON(data, {
+                        pointToLayer: function(feature, latlng) {
+                            return L.marker(latlng, {
+                                icon: L.divIcon({
+                                    className: 'factory-marker',
+                                    html: `<div style="background: ${feature.properties.status === 'აქტიური' ? '#28a745' : '#dc3545'}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">🏭</div>`
+                                })
+                            });
+                        },
+                        onEachFeature: function(feature, layer) {
+                            if (feature.properties) {
+                                layer.bindPopup(`
+                                    <strong>${feature.properties.name}</strong><br>
+                                    ტიპი: ${feature.properties.type}<br>
+                                    მოცულობა: ${feature.properties.capacity}<br>
+                                    სტატუსი: ${feature.properties.status}
+                                `);
+                            }
+                        }
+                    }).addTo(map);
+                })
+                .catch(error => console.log('Could not load factories:', error));
+        }
+
+        // Toggle layer visibility
+        function toggleLayer(layerName) {
+            const checkbox = document.getElementById(layerName + '-layer');
+            const isChecked = checkbox.checked;
+
+            switch(layerName) {
+                case 'roads':
+                    if (roadsLayer) {
+                        if (isChecked) {
+                            map.addLayer(roadsLayer);
+                        } else {
+                            map.removeLayer(roadsLayer);
+                        }
+                    }
+                    break;
+                case 'forests':
+                    if (forestsLayer) {
+                        if (isChecked) {
+                            map.addLayer(forestsLayer);
+                        } else {
+                            map.removeLayer(forestsLayer);
+                        }
+                    }
+                    break;
+                case 'factories':
+                    if (factoriesLayer) {
+                        if (isChecked) {
+                            map.addLayer(factoriesLayer);
+                        } else {
+                            map.removeLayer(factoriesLayer);
+                        }
+                    }
+                    break;
+            }
         }
 
         // Factory Management Functions
-        let editingFactoryId = null;
-        let coordinatePickingMode = false;
-        
-        function toggleFactoryForm() {
-            const form = document.getElementById('factory-form');
-            const btn = document.getElementById('toggle-form-btn');
-            
-            if (form.classList.contains('hidden')) {
-                form.classList.remove('hidden');
-                btn.textContent = 'Hide Form';
-                loadFactoryList();
-            } else {
-                form.classList.add('hidden');
-                btn.textContent = 'Add New Factory';
-                clearForm();
-            }
-        }
-        
-        function clearForm() {
-            document.getElementById('factory-name').value = '';
-            document.getElementById('factory-industry').value = '';
-            document.getElementById('factory-capacity').value = '';
-            document.getElementById('factory-year').value = '';
-            document.getElementById('factory-status').value = '';
-            document.getElementById('factory-longitude').value = '';
-            document.getElementById('factory-latitude').value = '';
-            document.getElementById('form-title').textContent = 'Add New Factory';
-            document.getElementById('save-btn').textContent = 'Save Factory';
-            document.getElementById('delete-btn').classList.add('hidden');
-            editingFactoryId = null;
-        }
-        
-        function saveFactory() {
-            const factoryData = {
-                name: document.getElementById('factory-name').value,
-                industryType: document.getElementById('factory-industry').value,
-                capacity: parseInt(document.getElementById('factory-capacity').value) || 0,
-                establishedYear: parseInt(document.getElementById('factory-year').value) || new Date().getFullYear(),
-                status: document.getElementById('factory-status').value,
-                longitude: parseFloat(document.getElementById('factory-longitude').value),
-                latitude: parseFloat(document.getElementById('factory-latitude').value)
-            };
-            
-            if (!factoryData.name || !factoryData.industryType || !factoryData.status || 
-                isNaN(factoryData.longitude) || isNaN(factoryData.latitude)) {
-                alert('Please fill in all required fields');
-                return;
-            }
-            
-            const url = editingFactoryId ? `/api/geo/factories/${editingFactoryId}` : '/api/geo/factories';
-            const method = editingFactoryId ? 'PUT' : 'POST';
-            
-            fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(factoryData)
-            })
-            .then(response => {
-                if (response.ok) {
-                    alert(editingFactoryId ? 'Factory updated successfully!' : 'Factory created successfully!');
-                    clearForm();
-                    loadFactoryList();
-                    refreshFactoryLayer();
-                } else {
-                    alert('Error saving factory');
-                }
-            })
-            .catch(err => {
-                console.error('Error saving factory:', err);
-                alert('Error saving factory');
-            });
-        }
-        
-        function editFactory(id) {
-            fetch(`/api/geo/factories/${id}`)
-                .then(response => response.json())
-                .then(factory => {
-                    document.getElementById('factory-name').value = factory.name;
-                    document.getElementById('factory-industry').value = factory.industryType;
-                    document.getElementById('factory-capacity').value = factory.capacity;
-                    document.getElementById('factory-year').value = factory.establishedYear;
-                    document.getElementById('factory-status').value = factory.status;
-                    document.getElementById('factory-longitude').value = factory.longitude;
-                    document.getElementById('factory-latitude').value = factory.latitude;
-                    
-                    document.getElementById('form-title').textContent = 'Edit Factory';
-                    document.getElementById('save-btn').textContent = 'Update Factory';
-                    document.getElementById('delete-btn').classList.remove('hidden');
-                    document.getElementById('factory-form').classList.remove('hidden');
-                    
-                    editingFactoryId = id;
-                })
-                .catch(err => {
-                    console.error('Error loading factory:', err);
-                    alert('Error loading factory data');
-                });
-        }
-        
-        function deleteFactory() {
-            if (!editingFactoryId) return;
-            
-            if (confirm('Are you sure you want to delete this factory?')) {
-                fetch(`/api/geo/factories/${editingFactoryId}`, { method: 'DELETE' })
-                    .then(response => {
-                        if (response.ok) {
-                            alert('Factory deleted successfully!');
-                            clearForm();
-                            loadFactoryList();
-                            refreshFactoryLayer();
-                        } else {
-                            alert('Error deleting factory');
-                        }
-                    })
-                    .catch(err => {
-                        console.error('Error deleting factory:', err);
-                        alert('Error deleting factory');
-                    });
-            }
-        }
-        
         function loadFactoryList() {
             fetch('/api/geo/factories')
                 .then(response => response.json())
-                .then(factories => {
-                    const container = document.getElementById('factories-container');
-                    container.innerHTML = '';
+                .then(data => {
+                    factoriesData = data.features;
+                    const factoryList = document.getElementById('factory-list');
+                    factoryList.innerHTML = '';
                     
-                    factories.forEach(factory => {
-                        const item = document.createElement('div');
-                        item.className = 'factory-item';
-                        item.innerHTML = `
-                            <strong>${factory.name}</strong><br>
-                            <small>${factory.industryType} - ${factory.status}</small>
+                    data.features.forEach(feature => {
+                        const div = document.createElement('div');
+                        div.className = 'factory-item';
+                        div.setAttribute('data-id', feature.properties.id);
+                        div.innerHTML = `
+                            <strong>${feature.properties.name}</strong><br>
+                            <small>${feature.properties.type} - ${feature.properties.status}</small>
                         `;
-                        item.onclick = () => editFactory(factory.id);
-                        container.appendChild(item);
+                        div.onclick = () => selectFactory(feature.properties.id);
+                        factoryList.appendChild(div);
                     });
-                })
-                .catch(err => console.error('Error loading factories:', err));
+                });
         }
-        
-        function refreshFactoryLayer() {
-            // Reload the factories layer with WMS support
-            const factoryLayerConfig = { 
-                name: 'factories', 
-                displayName: 'Factories',
-                wmsUrl: 'http://localhost:8080/geoserver/gisproject/wms'
+
+        function selectFactory(factoryId) {
+            selectedFactoryId = factoryId;
+            
+            // Update UI selection
+            document.querySelectorAll('.factory-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+            document.querySelector(`[data-id="${factoryId}"]`).classList.add('selected');
+            
+            // Load factory data into form
+            const factory = factoriesData.find(f => f.properties.id === factoryId);
+            if (factory) {
+                document.getElementById('factory-name').value = factory.properties.name;
+                document.getElementById('factory-type').value = factory.properties.type;
+                document.getElementById('factory-status').value = factory.properties.status;
+                document.getElementById('factory-capacity').value = factory.properties.capacity;
+                document.getElementById('factory-lat').value = factory.geometry.coordinates[1];
+                document.getElementById('factory-lng').value = factory.geometry.coordinates[0];
+                document.getElementById('delete-btn').style.display = 'inline-block';
+            }
+        }
+
+        function saveFactory() {
+            const factoryData = {
+                name: document.getElementById('factory-name').value,
+                type: document.getElementById('factory-type').value,
+                status: document.getElementById('factory-status').value,
+                capacity: parseInt(document.getElementById('factory-capacity').value),
+                latitude: parseFloat(document.getElementById('factory-lat').value),
+                longitude: parseFloat(document.getElementById('factory-lng').value)
             };
-            if (layers['factories']) {
-                map.removeLayer(layers['factories']);
-                // Add small delay to ensure GeoServer sync is complete
-                setTimeout(() => {
-                    loadGeoJSONLayer(factoryLayerConfig);
-                }, 2000);
+
+            if (!factoryData.name || !factoryData.type || !factoryData.status || 
+                !factoryData.capacity || !factoryData.latitude || !factoryData.longitude) {
+                alert('გთხოვთ შეავსოთ ყველა ველი');
+                return;
             }
+
+            const url = selectedFactoryId ? `/api/geo/factories/${selectedFactoryId}` : '/api/geo/factories';
+            const method = selectedFactoryId ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(factoryData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(selectedFactoryId ? 'ქარხანა წარმატებით განახლდა!' : 'ქარხანა წარმატებით დაემატა!');
+                clearForm();
+                loadFactoryList();
+                refreshFactoriesLayer();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('შეცდომა: ქარხნის შენახვა ვერ მოხერხდა');
+            });
         }
-        
-        function cancelForm() {
-            clearForm();
-            document.getElementById('factory-form').classList.add('hidden');
-            document.getElementById('toggle-form-btn').textContent = 'Add New Factory';
-        }
-        
-        // Add click handler for coordinate picking
-        map.on('click', function(e) {
-            const form = document.getElementById('factory-form');
-            if (!form.classList.contains('hidden')) {
-                // If factory form is open, set coordinates
-                document.getElementById('factory-longitude').value = e.latlng.lng.toFixed(6);
-                document.getElementById('factory-latitude').value = e.latlng.lat.toFixed(6);
+
+        function deleteSelectedFactory() {
+            if (!selectedFactoryId) {
+                alert('გთხოვთ აირჩიოთ ქარხანა წასაშლელად');
+                return;
             }
-        });
-        
-        // Load factory list on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(loadFactoryList, 1000); // Wait for page to fully load
-        });
+
+            if (!confirm('დარწმუნებული ხართ რომ გსურთ ქარხნის წაშლა?')) {
+                return;
+            }
+
+            fetch(`/api/geo/factories/${selectedFactoryId}`, {
+                method: 'DELETE'
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('ქარხანა წარმატებით წაიშალა!');
+                    clearForm();
+                    loadFactoryList();
+                    refreshFactoriesLayer();
+                } else {
+                    alert('შეცდომა: ქარხნის წაშლა ვერ მოხერხდა');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('შეცდომა: ქარხნის წაშლა ვერ მოხერხდა');
+            });
+        }
+
+        function clearForm() {
+            selectedFactoryId = null;
+            document.getElementById('factory-name').value = '';
+            document.getElementById('factory-type').value = '';
+            document.getElementById('factory-status').value = '';
+            document.getElementById('factory-capacity').value = '';
+            document.getElementById('factory-lat').value = '';
+            document.getElementById('factory-lng').value = '';
+            document.getElementById('delete-btn').style.display = 'none';
+            
+            document.querySelectorAll('.factory-item').forEach(item => {
+                item.classList.remove('selected');
+            });
+        }
+
+        function refreshFactoriesLayer() {
+            if (factoriesLayer) {
+                map.removeLayer(factoriesLayer);
+            }
+            
+            fetch('/api/geo/factories')
+                .then(response => response.json())
+                .then(data => {
+                    factoriesLayer = L.geoJSON(data, {
+                        pointToLayer: function(feature, latlng) {
+                            return L.marker(latlng, {
+                                icon: L.divIcon({
+                                    className: 'factory-marker',
+                                    html: `<div style="background: ${feature.properties.status === 'აქტიური' ? '#28a745' : '#dc3545'}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">🏭</div>`
+                                })
+                            });
+                        },
+                        onEachFeature: function(feature, layer) {
+                            if (feature.properties) {
+                                layer.bindPopup(`
+                                    <strong>${feature.properties.name}</strong><br>
+                                    ტიპი: ${feature.properties.type}<br>
+                                    მოცულობა: ${feature.properties.capacity}<br>
+                                    სტატუსი: ${feature.properties.status}
+                                `);
+                            }
+                        }
+                    });
+                    
+                    if (document.getElementById('factories-layer').checked) {
+                        factoriesLayer.addTo(map);
+                    }
+                })
+                .catch(error => console.log('Could not refresh factories:', error));
+        }
+
+        // Check GeoServer status
+        function checkGeoServerStatus() {
+            fetch('/api/geo/geoserver/status')
+                .then(response => response.json())
+                .then(data => {
+                    const statusDiv = document.getElementById('geoserver-status');
+                    const indicator = document.getElementById('geoserver-indicator');
+                    
+                    if (data.connected) {
+                        statusDiv.style.backgroundColor = '#d4edda';
+                        statusDiv.style.color = '#155724';
+                        indicator.textContent = '✅ ' + data.message;
+                    } else {
+                        statusDiv.style.backgroundColor = '#f8d7da';
+                        statusDiv.style.color = '#721c24';
+                        indicator.textContent = '❌ ' + data.message;
+                    }
+                })
+                .catch(error => {
+                    const statusDiv = document.getElementById('geoserver-status');
+                    const indicator = document.getElementById('geoserver-indicator');
+                    statusDiv.style.backgroundColor = '#f8d7da';
+                    statusDiv.style.color = '#721c24';
+                    indicator.textContent = '❌ GeoServer-ის სტატუსის შემოწმება ვერ მოხერხდა';
+                });
+        }
+
+        // Load layers when map is ready
+        setTimeout(() => {
+            loadCustomLayers();
+            loadFactoryList();
+            checkGeoServerStatus();
+        }, 1000);
+
+        console.log('✅ Map loaded successfully!');
     </script>
 </body>
 </html>
