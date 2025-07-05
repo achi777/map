@@ -15,28 +15,93 @@
             height: 100vh;
             width: 100%;
         }
-        .info-panel {
+        .control-icons {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .control-icon {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+        .control-icon:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        .control-icon.active {
+            border-color: #007bff;
+            background: #e3f2fd;
+        }
+        .control-panel {
+            position: absolute;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+            padding: 20px;
+            display: none;
+            max-width: 400px;
+            min-width: 300px;
+        }
+        .control-panel.show {
+            display: block;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .control-panel h4 {
+            margin: 0 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+            color: #333;
+        }
+        .panel-close {
             position: absolute;
             top: 10px;
-            right: 10px;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 1000;
-            max-width: 300px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+            padding: 5px;
         }
-        .routing-panel {
-            position: absolute;
-            bottom: 10px;
-            left: 230px;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 1000;
-            min-width: 350px;
-            max-width: 400px;
+        .panel-close:hover {
+            color: #333;
+        }
+        #info-panel {
+            top: 80px;
+            right: 15px;
+        }
+        #layers-panel {
+            top: 80px;
+            right: 15px;
+        }
+        #factory-panel {
+            top: 80px;
+            right: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        #routing-panel {
+            bottom: 15px;
+            right: 15px;
         }
         .routing-controls input {
             width: 100%;
@@ -90,21 +155,10 @@
             color: #28a745;
             font-weight: bold;
         }
-        .layers-panel {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 1000;
-            min-width: 200px;
-        }
         .layer-control {
             display: flex;
             align-items: center;
-            margin: 5px 0;
+            margin: 8px 0;
         }
         .layer-control input[type="checkbox"] {
             margin-right: 8px;
@@ -112,19 +166,6 @@
         .layer-control label {
             font-size: 14px;
             cursor: pointer;
-        }
-        .factory-management {
-            position: absolute;
-            top: 200px;
-            left: 10px;
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 1000;
-            min-width: 250px;
-            max-height: 400px;
-            overflow-y: auto;
         }
         .factory-form {
             margin-bottom: 15px;
@@ -178,8 +219,34 @@
     </style>
 </head>
 <body>
+    <!-- Control Icons -->
+    <div class="control-icons">
+        <div class="control-icon" onclick="togglePanel('info-panel', this)" title="ინფორმაცია">
+            ℹ️
+        </div>
+        <div class="control-icon" onclick="togglePanel('layers-panel', this)" title="ლეიერები">
+            📍
+        </div>
+        <div class="control-icon" onclick="togglePanel('factory-panel', this)" title="ქარხნების მართვა">
+            🏭
+        </div>
+        <div class="control-icon" onclick="togglePanel('routing-panel', this)" title="მარშრუტის დაგეგმვა">
+            🚗
+        </div>
+    </div>
+
+    <!-- Info Panel -->
+    <div id="info-panel" class="control-panel">
+        <button class="panel-close" onclick="closePanel('info-panel')">×</button>
+        <h4>🗺️ Simple Interactive Map</h4>
+        <p>საქართველოს ინტერაქტიული რუქა</p>
+        <p class="success">✅ Map is working!</p>
+        <small>OpenStreetMap-ის სტილის ნავიგაციით</small>
+    </div>
+
     <!-- Layers Panel -->
-    <div class="layers-panel">
+    <div id="layers-panel" class="control-panel">
+        <button class="panel-close" onclick="closePanel('layers-panel')">×</button>
         <h4>📍 Layer-ები</h4>
         <div class="layer-control">
             <input type="checkbox" id="roads-layer" checked onchange="toggleLayer('roads')">
@@ -196,7 +263,8 @@
     </div>
 
     <!-- Factory Management Panel -->
-    <div class="factory-management">
+    <div id="factory-panel" class="control-panel">
+        <button class="panel-close" onclick="closePanel('factory-panel')">×</button>
         <h4>🏭 ქარხნების მართვა</h4>
         <div id="geoserver-status" style="font-size: 12px; margin-bottom: 10px; padding: 5px; border-radius: 3px;">
             <span id="geoserver-indicator">🔄 GeoServer-ის სტატუსის შემოწმება...</span>
@@ -233,16 +301,9 @@
         </div>
     </div>
 
-    <!-- Info Panel -->
-    <div class="info-panel">
-        <h3>🗺️ Simple Interactive Map</h3>
-        <p>საქართველოს ინტერაქტიული რუქა</p>
-        <p class="success">✅ Map is working!</p>
-        <small>OpenStreetMap-ის სტილის ნავიგაციით</small>
-    </div>
-
     <!-- Routing Panel -->
-    <div class="routing-panel">
+    <div id="routing-panel" class="control-panel">
+        <button class="panel-close" onclick="closePanel('routing-panel')">×</button>
         <h4>🚗 მარშრუტის დაგეგმვა</h4>
         
         <div class="routing-controls">
@@ -456,48 +517,6 @@
             map.getContainer().style.cursor = '';
         }
 
-        // Map click handler
-        map.on('click', function(e) {
-            if (routingMode) {
-                const latlng = e.latlng;
-                
-                if (routingMode === 'start') {
-                    startLocation = latlng;
-                    
-                    if (startMarker) {
-                        map.removeLayer(startMarker);
-                    }
-                    
-                    startMarker = L.marker(latlng, {
-                        icon: L.divIcon({
-                            className: 'start-marker',
-                            html: '<div style="background: #28a745; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">A</div>'
-                        })
-                    }).addTo(map);
-                    
-                    document.getElementById('start-location').value = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
-                    
-                } else if (routingMode === 'end') {
-                    endLocation = latlng;
-                    
-                    if (endMarker) {
-                        map.removeLayer(endMarker);
-                    }
-                    
-                    endMarker = L.marker(latlng, {
-                        icon: L.divIcon({
-                            className: 'end-marker',
-                            html: '<div style="background: #dc3545; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">B</div>'
-                        })
-                    }).addTo(map);
-                    
-                    document.getElementById('end-location').value = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
-                }
-                
-                routingMode = null;
-                map.getContainer().style.cursor = '';
-            }
-        });
 
         // Load custom layers
         function loadCustomLayers() {
@@ -805,6 +824,93 @@
                     indicator.textContent = '❌ GeoServer-ის სტატუსის შემოწმება ვერ მოხერხდა';
                 });
         }
+
+        // Panel management functions
+        function togglePanel(panelId, iconElement) {
+            // Close all other panels first
+            document.querySelectorAll('.control-panel').forEach(panel => {
+                if (panel.id !== panelId) {
+                    panel.classList.remove('show');
+                }
+            });
+            
+            // Remove active state from all icons
+            document.querySelectorAll('.control-icon').forEach(icon => {
+                icon.classList.remove('active');
+            });
+            
+            // Toggle the clicked panel
+            const panel = document.getElementById(panelId);
+            const isVisible = panel.classList.contains('show');
+            
+            if (isVisible) {
+                panel.classList.remove('show');
+            } else {
+                panel.classList.add('show');
+                iconElement.classList.add('active');
+            }
+        }
+
+        function closePanel(panelId) {
+            document.getElementById(panelId).classList.remove('show');
+            document.querySelectorAll('.control-icon').forEach(icon => {
+                icon.classList.remove('active');
+            });
+        }
+
+        // Close panels when clicking on map
+        map.on('click', function(e) {
+            // Only close panels if not in routing mode
+            if (!routingMode) {
+                document.querySelectorAll('.control-panel').forEach(panel => {
+                    panel.classList.remove('show');
+                });
+                document.querySelectorAll('.control-icon').forEach(icon => {
+                    icon.classList.remove('active');
+                });
+            }
+            
+            // Handle routing clicks
+            if (routingMode) {
+                const latlng = e.latlng;
+                
+                if (routingMode === 'start') {
+                    startLocation = latlng;
+                    
+                    if (startMarker) {
+                        map.removeLayer(startMarker);
+                    }
+                    
+                    startMarker = L.marker(latlng, {
+                        icon: L.divIcon({
+                            className: 'start-marker',
+                            html: '<div style="background: #28a745; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">A</div>'
+                        })
+                    }).addTo(map);
+                    
+                    document.getElementById('start-location').value = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+                    
+                } else if (routingMode === 'end') {
+                    endLocation = latlng;
+                    
+                    if (endMarker) {
+                        map.removeLayer(endMarker);
+                    }
+                    
+                    endMarker = L.marker(latlng, {
+                        icon: L.divIcon({
+                            className: 'end-marker',
+                            html: '<div style="background: #dc3545; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;">B</div>'
+                        })
+                    }).addTo(map);
+                    
+                    document.getElementById('end-location').value = `${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
+                }
+                
+                routingMode = null;
+                map.getContainer().style.cursor = '';
+            }
+        });
 
         // Load layers when map is ready
         setTimeout(() => {
